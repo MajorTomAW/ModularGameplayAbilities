@@ -3,6 +3,7 @@
 
 #include "Abilities/ModularGameplayAbility.h"
 
+#include "AbilitySystemLog.h"
 #include "ModularAbilitySystemComponent.h"
 #include "GameFramework/PlayerState.h"
 
@@ -143,6 +144,61 @@ bool UModularGameplayAbility::ChangeActivationGroup(EGameplayAbilityActivationGr
 	return true;
 }
 
+void UModularGameplayAbility::TryActivateAbilityOnSpawn(const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilitySpec& Spec) const
+{
+PRAGMA_DISABLE_DEPRECATION_WARNINGS
+	const bool bIsPredicting = (Spec.ActivationInfo.ActivationMode == EGameplayAbilityActivationMode::Predicting);
+PRAGMA_ENABLE_DEPRECATION_WARNINGS
+
+	UAbilitySystemComponent* ASC = ActorInfo->AbilitySystemComponent.Get();
+
+	const bool bIsPassiveAbility = (ActivationPolicy == EGameplayAbilityActivationPolicy::Passive);
+
+	auto HasRequiredTags = [&, ASC]()->bool
+	{
+		if (ActivationRequiredTags.IsEmpty())
+		{
+			return true;
+		}
+
+		if (ASC->GetOwnedGameplayTags().HasAllExact(ActivationRequiredTags) &&
+			bActivateIfTagsAlreadyPresent)
+		{
+			return true;
+		}
+
+		return false;
+	};
+
+	if (ActorInfo &&
+		!Spec.IsActive() &&
+		!bIsPredicting &&
+		(bIsPassiveAbility || HasRequiredTags() ))
+	{
+		const AActor* AvatarActor = ActorInfo->AvatarActor.Get();
+
+		if (ASC &&
+			AvatarActor &&
+			!AvatarActor->GetTearOff() &&
+			(AvatarActor->GetLifeSpan() <= 0.f))
+		{
+			const bool bIsLocalExecution = (NetExecutionPolicy == EGameplayAbilityNetExecutionPolicy::LocalPredicted) ||
+				(NetExecutionPolicy == EGameplayAbilityNetExecutionPolicy::LocalOnly);
+
+			const bool bIsServerExecution = (NetExecutionPolicy == EGameplayAbilityNetExecutionPolicy::ServerInitiated) ||
+				(NetExecutionPolicy == EGameplayAbilityNetExecutionPolicy::ServerOnly);
+
+			const bool bClientShouldActivate = ActorInfo->IsLocallyControlled() && bIsLocalExecution;
+			const bool bServerShouldActivate = ActorInfo->IsNetAuthority() && bIsServerExecution;
+
+			if (bClientShouldActivate || bServerShouldActivate)
+			{
+				ASC->TryActivateAbility(Spec.Handle);
+			}
+		}
+	}
+}
+
 bool UModularGameplayAbility::CanActivateAbility(
 	const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo,
 	const FGameplayTagContainer* SourceTags, const FGameplayTagContainer* TargetTags, FGameplayTagContainer* OptionalRelevantTags) const
@@ -176,18 +232,28 @@ bool UModularGameplayAbility::CanActivateAbility(
 
 void UModularGameplayAbility::SetCanBeCanceled(bool bCanBeCanceled)
 {
+	if (!bCanBeCanceled && (ActivationGroup == EGameplayAbilityActivationGroup::Exclusive_Replaceable))
+	{
+		ABILITY_LOG(Error, TEXT("%hs: Can't set CanBeCanceled to false on an Exclusive_Replaceable ability (%s)."), __func__, *GetName());
+		return;
+	}
+	
 	Super::SetCanBeCanceled(bCanBeCanceled);
 }
 
-void UModularGameplayAbility::OnGiveAbility(const FGameplayAbilityActorInfo* ActorInfo,
-	const FGameplayAbilitySpec& Spec)
+void UModularGameplayAbility::OnGiveAbility(const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilitySpec& Spec)
 {
 	Super::OnGiveAbility(ActorInfo, Spec);
+
+	K2_OnAbilityAdded();
+
+	TryActivateAbilityOnSpawn(ActorInfo, Spec);
 }
 
-void UModularGameplayAbility::OnRemoveAbility(const FGameplayAbilityActorInfo* ActorInfo,
-	const FGameplayAbilitySpec& Spec)
+void UModularGameplayAbility::OnRemoveAbility(const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilitySpec& Spec)
 {
+	K2_OnAbilityRemoved();
+	
 	Super::OnRemoveAbility(ActorInfo, Spec);
 }
 
@@ -214,6 +280,11 @@ bool UModularGameplayAbility::CheckCost(const FGameplayAbilitySpecHandle Handle,
 void UModularGameplayAbility::ApplyCost(const FGameplayAbilitySpecHandle Handle,
 	const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo) const
 {
+	if (!bApplyingCostsEnabled)
+	{
+		return;
+	}
+	
 	Super::ApplyCost(Handle, ActorInfo, ActivationInfo);
 }
 
@@ -221,4 +292,13 @@ void UModularGameplayAbility::ApplyCooldown(const FGameplayAbilitySpecHandle Han
 	const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo) const
 {
 	Super::ApplyCooldown(Handle, ActorInfo, ActivationInfo);
+}
+
+void UModularGameplayAbility::OnPawnAvatarSet()
+{
+	K2_OnPawnAvatarSet();
+}
+
+void UModularGameplayAbility::NativeOnAbilityFailedToActivate(const FGameplayTagContainer& FailedReason) const
+{
 }
