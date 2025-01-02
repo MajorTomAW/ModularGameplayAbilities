@@ -27,7 +27,10 @@ public:
 	virtual bool ShouldAsyncLoadMissingGameplayCues() const override;
 	//~ End UGameplayCueManager Interface
 
+	/** When delay loading cues, this will load the cues that must be always loaded anyway. */
 	void LoadAlwaysLoadedCues();
+
+	/** Updates the bundles for the singular gameplay cue primary asset. */
 	void RefreshGameplayCuePrimaryAsset();
 
 private:
