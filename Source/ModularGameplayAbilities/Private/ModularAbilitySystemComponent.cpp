@@ -11,8 +11,18 @@
 UModularAbilitySystemComponent::UModularAbilitySystemComponent(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
+	InputHeldHandles.Reset();
+	InputPressedHandles.Reset();
+	InputReleasedHandles.Reset();
+	
 	FMemory::Memset(ActivationGroupCounts, 0 , sizeof(ActivationGroupCounts));
 }
+
+void UModularAbilitySystemComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	Super::EndPlay(EndPlayReason);
+}
+
 
 bool UModularAbilitySystemComponent::IsActivationGroupBlocked(EGameplayAbilityActivationGroup::Type Group) const
 {
@@ -94,6 +104,84 @@ void UModularAbilitySystemComponent::CancelActivationGroupAbilities(
 	CancelAbilitiesByFunc(ShouldCancelFunc, bReplicateCancelAbilities);
 }
 
+void UModularAbilitySystemComponent::AbilitySpecInputPressed(FGameplayAbilitySpec& Spec)
+{
+	Super::AbilitySpecInputPressed(Spec);
+
+	// We don't support UGameplayAbility::bReplicateInputDirectly.
+	// Use replicated events instead so that the WaitInputPress ability task works.
+	if (Spec.IsActive())
+	{
+		// Invoke the InputReleased event. This is not replicated here. If someone is listening, they may replicate the InputReleased event to the server.
+		if (const UGameplayAbility* PrimaryInstance = Spec.GetPrimaryInstance())
+		{
+			const FPredictionKey PredictionKey = PrimaryInstance->GetCurrentActivationInfo().GetActivationPredictionKey();
+			InvokeReplicatedEvent(EAbilityGenericReplicatedEvent::InputPressed, Spec.Handle, PredictionKey);
+		}
+		else
+		{
+			for (const UGameplayAbility* Instance : Spec.GetAbilityInstances())
+			{
+				const FPredictionKey PredictionKey = Instance->GetCurrentActivationInfo().GetActivationPredictionKey();
+				InvokeReplicatedEvent(EAbilityGenericReplicatedEvent::InputPressed, Spec.Handle, PredictionKey);
+			}
+		}
+	}
+}
+
+void UModularAbilitySystemComponent::AbilitySpecInputReleased(FGameplayAbilitySpec& Spec)
+{
+	Super::AbilitySpecInputReleased(Spec);
+	
+	// We don't support UGameplayAbility::bReplicateInputDirectly.
+	// Use replicated events instead so that the WaitInputRelease ability task works.
+	if (Spec.IsActive())
+	{
+		// Invoke the InputReleased event. This is not replicated here. If someone is listening, they may replicate the InputReleased event to the server.
+		if (const UGameplayAbility* PrimaryInstance = Spec.GetPrimaryInstance())
+		{
+			const FPredictionKey PredictionKey = PrimaryInstance->GetCurrentActivationInfo().GetActivationPredictionKey();
+			InvokeReplicatedEvent(EAbilityGenericReplicatedEvent::InputReleased, Spec.Handle, PredictionKey);
+		}
+		else
+		{
+			for (const UGameplayAbility* Instance : Spec.GetAbilityInstances())
+			{
+				const FPredictionKey PredictionKey = Instance->GetCurrentActivationInfo().GetActivationPredictionKey();
+				InvokeReplicatedEvent(EAbilityGenericReplicatedEvent::InputReleased, Spec.Handle, PredictionKey);
+			}
+		}
+	}
+}
+
+void UModularAbilitySystemComponent::NotifyAbilityActivated(
+	const FGameplayAbilitySpecHandle Handle, UGameplayAbility* Ability)
+{
+	Super::NotifyAbilityActivated(Handle, Ability);
+
+	if (UModularGameplayAbility* ModularAbility = Cast<UModularGameplayAbility>(Ability))
+	{
+		AddAbilityToActivationGroup(ModularAbility->GetActivationGroup(), ModularAbility);
+	}
+}
+
+void UModularAbilitySystemComponent::NotifyAbilityFailed(
+	const FGameplayAbilitySpecHandle Handle, UGameplayAbility* Ability, const FGameplayTagContainer& FailureReason)
+{
+	Super::NotifyAbilityFailed(Handle, Ability, FailureReason);
+}
+
+void UModularAbilitySystemComponent::NotifyAbilityEnded(
+	FGameplayAbilitySpecHandle Handle, UGameplayAbility* Ability, bool bWasCancelled)
+{
+	Super::NotifyAbilityEnded(Handle, Ability, bWasCancelled);
+
+	if (UModularGameplayAbility* ModularAbility = Cast<UModularGameplayAbility>(Ability))
+	{
+		RemoveAbilityFromActivationGroup(ModularAbility->GetActivationGroup(), ModularAbility);
+	}
+}
+
 void UModularAbilitySystemComponent::CancelAbilitiesByFunc(
 	TShouldCancelAbilityFunc ShouldCancelFunc, bool bReplicateCancelAbility)
 {
@@ -145,6 +233,163 @@ PRAGMA_DISABLE_DEPRECATION_WARNINGS
 		}
 PRAGMA_ENABLE_DEPRECATION_WARNINGS
 	}
+}
+
+void UModularAbilitySystemComponent::CancelInputActivatedAbilities(bool bReplicateCancelAbility)
+{
+	auto ShouldCancelFunc = [this](const UModularGameplayAbility* Ability, FGameplayAbilitySpecHandle Handle)
+	{
+		const EGameplayAbilityActivationPolicy::Type ActivationPolicy = Ability->GetActivationPolicy();
+		return ActivationPolicy == EGameplayAbilityActivationPolicy::Active;
+	};
+
+	CancelAbilitiesByFunc(ShouldCancelFunc, bReplicateCancelAbility);
+}
+
+void UModularAbilitySystemComponent::AbilityInputTagPressed(const FGameplayTag& InputTag)
+{
+	if (!InputTag.IsValid())
+	{
+		return;
+	}
+
+	for (const FGameplayAbilitySpec& Spec : ActivatableAbilities.Items)
+	{
+		if (Spec.Ability && Spec.GetDynamicSpecSourceTags().HasTagExact(InputTag))
+		{
+			UModularGameplayAbility* CDO = Cast<UModularGameplayAbility>(Spec.Ability);
+			if (CDO == nullptr)
+			{
+				continue;
+			}
+
+			if (CDO->GetActivationPolicy() != EGameplayAbilityActivationPolicy::Active)
+			{
+				continue;
+			}
+
+			InputPressedHandles.AddUnique(Spec.Handle);
+			InputHeldHandles.AddUnique(Spec.Handle);
+		}
+	}
+}
+
+void UModularAbilitySystemComponent::AbilityInputTagReleased(const FGameplayTag& InputTag)
+{
+	if (!InputTag.IsValid())
+	{
+		return;
+	}
+
+	for (const FGameplayAbilitySpec& Spec : ActivatableAbilities.Items)
+	{
+		if (Spec.Ability && Spec.GetDynamicSpecSourceTags().HasTagExact(InputTag))
+		{
+			InputHeldHandles.Remove(Spec.Handle);
+			InputReleasedHandles.AddUnique(Spec.Handle);
+		}
+	}
+}
+
+void UModularAbilitySystemComponent::ProcessAbilityInput(float DeltaTime, bool bGamePaused)
+{
+	if (bGamePaused)
+	{
+		ClearAbilityInput();
+		return;
+	}
+	
+	if (!IsAbilityInputAllowed())
+	{
+		ClearAbilityInput();
+		return;
+	}
+
+	static TArray<FGameplayAbilitySpecHandle> HandlesToActivate;
+	HandlesToActivate.Reset();
+
+	// Process input for abilities that are held
+	for (const auto& Handle : InputHeldHandles)
+	{
+		if (const FGameplayAbilitySpec* Spec = FindAbilitySpecFromHandle(Handle))
+		{
+			if (!Spec->Ability)
+			{
+				continue;
+			}
+			
+			const UModularGameplayAbility* CDO = Cast<UModularGameplayAbility>(Spec->Ability);
+			if (CDO && CDO->GetActivationPolicy() == EGameplayAbilityActivationPolicy::Active)
+			{
+				HandlesToActivate.AddUnique(Handle);
+			}
+		}
+	}
+
+	// Process input for abilities that are pressed
+	for (const auto& Handle : InputPressedHandles)
+	{
+		if (FGameplayAbilitySpec* Spec = FindAbilitySpecFromHandle(Handle))
+		{
+			if (!Spec->Ability)
+			{
+				continue;
+			}
+
+			Spec->InputPressed = true;
+
+			if (Spec->IsActive())
+			{
+				// Invoke the input pressed event
+				AbilitySpecInputPressed(*Spec);
+			}
+			else
+			{
+				const UModularGameplayAbility* CDO = Cast<UModularGameplayAbility>(Spec->Ability);
+
+				if (CDO && CDO->GetActivationPolicy() == EGameplayAbilityActivationPolicy::Active)
+				{
+					HandlesToActivate.AddUnique(Handle);
+				}
+			}
+		}
+	}
+
+	// Try to activate abilities
+	for (const auto& Handle : HandlesToActivate)
+	{
+		TryActivateAbility(Handle);
+	}
+
+	// Process input for abilities that are released
+	for (const auto& Handle : InputReleasedHandles)
+	{
+		if (FGameplayAbilitySpec* Spec = FindAbilitySpecFromHandle(Handle))
+		{
+			if (!Spec->Ability)
+			{
+				continue;
+			}
+
+			Spec->InputPressed = false;
+
+			if (Spec->IsActive())
+			{
+				// Invoke the input released event
+				AbilitySpecInputReleased(*Spec);
+			}
+		}
+	}
+
+	InputPressedHandles.Reset();
+	InputReleasedHandles.Reset();
+}
+
+void UModularAbilitySystemComponent::ClearAbilityInput()
+{
+	InputPressedHandles.Reset();
+	InputHeldHandles.Reset();
+	InputReleasedHandles.Reset();
 }
 
 
