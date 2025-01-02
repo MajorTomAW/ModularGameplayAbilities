@@ -1,6 +1,6 @@
 ﻿// Copyright Epic Games, Inc. All Rights Reserved.
 
-#include "ModularGameplayAbilities.h"
+#include "ModularGameplayAbilitiesModule.h"
 
 #define LOCTEXT_NAMESPACE "FModularGameplayAbilitiesModule"
 
