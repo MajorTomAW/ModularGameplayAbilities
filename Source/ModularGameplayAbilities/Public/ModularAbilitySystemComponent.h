@@ -39,6 +39,13 @@ public:
 	/** Whether we currently allow processing ability input. */
 	virtual bool IsAbilityInputAllowed() const { return true; }
 
+	/** Deferred set base attribute value from replication. */
+	virtual void DeferredSetBaseAttributeValueFromReplication(const FGameplayAttribute& Attribute, float NewValue);
+	virtual void DeferredSetBaseAttributeValueFromReplication(const FGameplayAttribute& Attribute, FGameplayAttributeData NewValue);
+
+	/** Tries to activate all passive abilities on spawn. */
+	void TryActivateAbilitiesOnSpawn();
+
 	// ----------------------------------------------------------------------------------------------------------------
 	//	Activation Groups
 	// ----------------------------------------------------------------------------------------------------------------
@@ -55,7 +62,7 @@ public:
 	/** Cancels all abilities in the specified activation group. */
 	void CancelActivationGroupAbilities(EGameplayAbilityActivationGroup::Type Group, UModularGameplayAbility* AbilityToIgnore, bool bReplicateCancelAbilities = true);
 
-protected:
+public:
 	//~ Begin UAbilitySystemComponent Interface
 	virtual void AbilitySpecInputPressed(FGameplayAbilitySpec& Spec) override;
 	virtual void AbilitySpecInputReleased(FGameplayAbilitySpec& Spec) override;
@@ -63,6 +70,8 @@ protected:
 	virtual void NotifyAbilityActivated(const FGameplayAbilitySpecHandle Handle, UGameplayAbility* Ability) override;
 	virtual void NotifyAbilityFailed(const FGameplayAbilitySpecHandle Handle, UGameplayAbility* Ability, const FGameplayTagContainer& FailureReason) override;
 	virtual void NotifyAbilityEnded(FGameplayAbilitySpecHandle Handle, UGameplayAbility* Ability, bool bWasCancelled) override;
+
+	virtual void InitAbilityActorInfo(AActor* InOwnerActor, AActor* InAvatarActor) override;
 	//~ End UAbilitySystemComponent Interface
 
 protected:

@@ -30,7 +30,7 @@ UObject* UAbilitySetFactory::FactoryCreateNew(UClass* InClass, UObject* InParent
 	UObject* Context, FFeedbackContext* Warn, FName CallingContext)
 {
 	check(InClass->IsChildOf(UModularAbilitySet::StaticClass()));
-	return NewObject<UModularAbilitySet>(InParent, InClass, InName, Flags);
+	return NewObject<UModularAbilitySet>(InParent, InClass, InName, Flags | RF_Transactional, Context);
 }
 
 #undef LOCTEXT_NAMESPACE

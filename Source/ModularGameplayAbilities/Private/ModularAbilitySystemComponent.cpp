@@ -182,6 +182,87 @@ void UModularAbilitySystemComponent::NotifyAbilityEnded(
 	}
 }
 
+void UModularAbilitySystemComponent::InitAbilityActorInfo(AActor* InOwnerActor, AActor* InAvatarActor)
+{
+	FGameplayAbilityActorInfo* ActorInfo = AbilityActorInfo.Get();
+	check(ActorInfo);
+	check(InOwnerActor);
+
+	const bool bHasNewPawnAvatar = Cast<APawn>(InAvatarActor) && (InAvatarActor != ActorInfo->AvatarActor);
+	
+	Super::InitAbilityActorInfo(InOwnerActor, InAvatarActor);
+
+	if (!bHasNewPawnAvatar)
+	{
+		return;
+	}
+
+	// Notify all active abilities that the avatar actor has changed
+	for (const FGameplayAbilitySpec& Spec : ActivatableAbilities.Items)
+	{
+		UModularGameplayAbility* AbilityCDO = Cast<UModularGameplayAbility>(Spec.Ability);
+		if (!AbilityCDO)
+		{
+			continue;
+		}
+PRAGMA_DISABLE_DEPRECATION_WARNINGS
+		if (AbilityCDO->GetInstancingPolicy() != EGameplayAbilityInstancingPolicy::NonInstanced)
+		{
+			TArray<UGameplayAbility*> Instances = Spec.GetAbilityInstances();
+			for (UGameplayAbility* Instance : Instances)
+			{
+				if (UModularGameplayAbility* ModularInstance = Cast<UModularGameplayAbility>(Instance))
+				{
+					ModularInstance->OnPawnAvatarSet();
+				}
+			}
+		}
+		else
+		{
+			AbilityCDO->OnPawnAvatarSet();
+		}
+PRAGMA_ENABLE_DEPRECATION_WARNINGS
+	}
+
+	TryActivateAbilitiesOnSpawn();
+}
+
+void UModularAbilitySystemComponent::TryActivateAbilitiesOnSpawn()
+{
+	ABILITYLIST_SCOPE_LOCK();
+
+	for (const FGameplayAbilitySpec& Spec : ActivatableAbilities.Items)
+	{
+		const UModularGameplayAbility* AbilityCDO = Cast<UModularGameplayAbility>(Spec.Ability);
+		if (!AbilityCDO)
+		{
+			continue;
+		}
+
+		bool bAnyInstancesFound = false;
+PRAGMA_DISABLE_DEPRECATION_WARNINGS
+		if (AbilityCDO->GetInstancingPolicy() != EGameplayAbilityInstancingPolicy::NonInstanced)
+		{
+			TArray<UGameplayAbility*> Instances = Spec.GetAbilityInstances();
+			for (UGameplayAbility* Instance : Instances)
+			{
+				if (const UModularGameplayAbility* ModularInstance = Cast<UModularGameplayAbility>(Instance))
+				{
+					ModularInstance->TryActivateAbilityOnSpawn(AbilityActorInfo.Get(), Spec);
+				}
+			}
+
+			bAnyInstancesFound = Instances.Num() > 0;
+		}
+		
+		if (!bAnyInstancesFound)
+		{
+			AbilityCDO->TryActivateAbilityOnSpawn(AbilityActorInfo.Get(), Spec);
+		}
+PRAGMA_ENABLE_DEPRECATION_WARNINGS
+	}
+}
+
 void UModularAbilitySystemComponent::CancelAbilitiesByFunc(
 	TShouldCancelAbilityFunc ShouldCancelFunc, bool bReplicateCancelAbility)
 {
@@ -390,6 +471,19 @@ void UModularAbilitySystemComponent::ClearAbilityInput()
 	InputPressedHandles.Reset();
 	InputHeldHandles.Reset();
 	InputReleasedHandles.Reset();
+}
+
+void UModularAbilitySystemComponent::DeferredSetBaseAttributeValueFromReplication(
+	const FGameplayAttribute& Attribute, float NewValue)
+{
+	const float OldValue = ActiveGameplayEffects.GetAttributeBaseValue(Attribute);
+	ActiveGameplayEffects.SetAttributeBaseValue(Attribute, NewValue);
+	SetBaseAttributeValueFromReplication(Attribute, OldValue, NewValue);
+}
+void UModularAbilitySystemComponent::DeferredSetBaseAttributeValueFromReplication(
+	const FGameplayAttribute& Attribute, FGameplayAttributeData NewValue)
+{
+	DeferredSetBaseAttributeValueFromReplication(Attribute, NewValue.GetBaseValue());
 }
 
 

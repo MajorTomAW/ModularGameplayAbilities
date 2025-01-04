@@ -20,6 +20,7 @@ public class ModularGameplayAbilities : ModuleRules
 		{ 
 			"CoreUObject", 
 			"Engine",
+			"NetCore",
 		});
 	}
 }

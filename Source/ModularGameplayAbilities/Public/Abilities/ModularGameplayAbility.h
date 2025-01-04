@@ -15,6 +15,7 @@ UCLASS(Blueprintable, HideCategories = Input)
 class MODULARGAMEPLAYABILITIES_API UModularGameplayAbility : public UGameplayAbility
 {
 	GENERATED_BODY()
+	friend class UModularAbilitySystemComponent;
 	
 public:
 	UModularGameplayAbility(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
