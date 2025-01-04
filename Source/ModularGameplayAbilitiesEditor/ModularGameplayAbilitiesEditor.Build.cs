@@ -1,4 +1,6 @@
-﻿using UnrealBuildTool;
+﻿// Copyright © 2024 MajorT. All Rights Reserved.
+
+using UnrealBuildTool;
 
 public class ModularGameplayAbilitiesEditor : ModuleRules
 {

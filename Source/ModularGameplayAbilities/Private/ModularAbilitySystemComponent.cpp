@@ -1,4 +1,4 @@
-// Copyright © 2024 Playton. All Rights Reserved.
+// Copyright © 2024 MajorT. All Rights Reserved.
 
 
 #include "ModularAbilitySystemComponent.h"
