@@ -13,23 +13,49 @@ class UModularAbilitySystemComponent;
 class UGameplayEffect;
 struct FGameplayEffectSpec;
 
-#define GAMEPLAY_ATTRIBUTE_VALUE_CLAMP(PropertyName)												\
-	float Clamp##PropertyName()																		\
-	{																								\
-		float Value = Get##PropertyName();															\
-		ClampAttribute(FGameplayAttribute(FindFieldChecked<FProperty>(ThisClass::StaticClass(),		\
-			GET_MEMBER_NAME_CHECKED(ThisClass, PropertyName))), Value);								\
-																									\
-		return Value;																				\
-	} 
+
+/**
+ * Delegate used to broadcast attribute events, some of these parameters may be null on clients:
+ * @param EffectInstigator	The original instigating actor for this event
+ * @param EffectCauser		The physical actor that caused the change
+ * @param EffectSpec		The full effect spec for this change
+ * @param EffectMagnitude	The raw magnitude, this is before clamping
+ * @param OldValue			The value of the attribute before it was changed
+ * @param NewValue			The value after it was changed
+ */
+DECLARE_MULTICAST_DELEGATE_SixParams(FGameplayAttributeEvent, AActor* /*EffectInstigator*/, AActor* /*EffectCauser*/, const FGameplayEffectSpec* /*EffectSpec*/, float /*EffectMagnitude*/, float /*OldValue*/, float /*NewValue*/);
+
+#define GAMEPLAY_ATTRIBUTE_NOTIFY(PropertyName)														\
+	mutable FGameplayAttributeEvent On##PropertyName##Changed;										\
+	float Cached##PropertyName##BeforeAttributeChange;
+
+#define GAMEPLAY_ATTRIBUTE_NOTIFY_OUT(PropertyName)													\
+	mutable FGameplayAttributeEvent OnOutOf##PropertyName##Delegate;								\
+	bool bOutOf##PropertyName##Check;
 
 /** Accessor macro for attribute properties */
 #define ATTRIBUTE_ACCESSORS(ClassName, PropertyName)												\
 	GAMEPLAYATTRIBUTE_PROPERTY_GETTER(ClassName, PropertyName)										\
 	GAMEPLAYATTRIBUTE_VALUE_GETTER(PropertyName)													\
 	GAMEPLAYATTRIBUTE_VALUE_SETTER(PropertyName)													\
+	GAMEPLAYATTRIBUTE_VALUE_INITTER(PropertyName)																								
+
+/** Accessor macro for attribute properties with notify delegate */
+#define ATTRIBUTE_ACCESSORS_NOTIFY(ClassName, PropertyName)											\
+	GAMEPLAYATTRIBUTE_PROPERTY_GETTER(ClassName, PropertyName)										\
+	GAMEPLAYATTRIBUTE_VALUE_GETTER(PropertyName)													\
+	GAMEPLAYATTRIBUTE_VALUE_SETTER(PropertyName)													\
 	GAMEPLAYATTRIBUTE_VALUE_INITTER(PropertyName)													\
-	GAMEPLAY_ATTRIBUTE_VALUE_CLAMP(PropertyName)
+	GAMEPLAY_ATTRIBUTE_NOTIFY(PropertyName)															
+
+/** Accessor macro for attribute properties with notify delegate and out of bounds delegate */
+#define ATTRIBUTE_ACCESSORS_NOTIFY_PLUS(ClassName, PropertyName)									\
+	GAMEPLAYATTRIBUTE_PROPERTY_GETTER(ClassName, PropertyName)										\
+	GAMEPLAYATTRIBUTE_VALUE_GETTER(PropertyName)													\
+	GAMEPLAYATTRIBUTE_VALUE_SETTER(PropertyName)													\
+	GAMEPLAYATTRIBUTE_VALUE_INITTER(PropertyName)													\
+	GAMEPLAY_ATTRIBUTE_NOTIFY(PropertyName)															\
+	GAMEPLAY_ATTRIBUTE_NOTIFY_OUT(PropertyName) \
 
 /** Lazy RepNotify macro for attribute properties */
 #define LAZY_ATTRIBUTE_REPNOTIFY(ClassName, PropertyName, OldValue)									\
@@ -50,17 +76,6 @@ struct FGameplayEffectSpec;
 			FGameplayAttribute(ThisProperty), PropertyName, OldValue);								\
 	}																								\
 }
-
-/**
- * Delegate used to broadcast attribute events, some of these parameters may be null on clients:
- * @param EffectInstigator	The original instigating actor for this event
- * @param EffectCauser		The physical actor that caused the change
- * @param EffectSpec		The full effect spec for this change
- * @param EffectMagnitude	The raw magnitude, this is before clamping
- * @param OldValue			The value of the attribute before it was changed
- * @param NewValue			The value after it was changed
- */
-DECLARE_MULTICAST_DELEGATE_SixParams(FGameplayAttributeEvent, AActor* /*EffectInstigator*/, AActor* /*EffectCauser*/, const FGameplayEffectSpec* /*EffectSpec*/, float /*EffectMagnitude*/, float /*OldValue*/, float /*NewValue*/);
 
 /**
  * Extension of the base AttributeSet class that adds additional functionality for the ModularGameplayAbilities plugin.
