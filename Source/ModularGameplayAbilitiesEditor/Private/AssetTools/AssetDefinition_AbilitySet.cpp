@@ -48,7 +48,7 @@ FText UAssetDefinition_TagRelationshipMapping::GetAssetDisplayName() const
 
 FLinearColor UAssetDefinition_TagRelationshipMapping::GetAssetColor() const
 {
-	return FLinearColor(FColor(149,70, 255));
+	return FLinearColor(FColor::FromHex("#0059cb"));
 }
 
 TSoftClassPtr<> UAssetDefinition_TagRelationshipMapping::GetAssetClass() const

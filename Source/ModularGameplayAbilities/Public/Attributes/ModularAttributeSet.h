@@ -31,7 +31,7 @@ DECLARE_MULTICAST_DELEGATE_SixParams(FGameplayAttributeEvent, AActor* /*EffectIn
 
 #define GAMEPLAY_ATTRIBUTE_NOTIFY_OUT(PropertyName)													\
 	mutable FGameplayAttributeEvent OnOutOf##PropertyName##Delegate;								\
-	bool bOutOf##PropertyName##Check;
+	bool bOutOf##PropertyName;
 
 /** Accessor macro for attribute properties */
 #define ATTRIBUTE_ACCESSORS(ClassName, PropertyName)												\
