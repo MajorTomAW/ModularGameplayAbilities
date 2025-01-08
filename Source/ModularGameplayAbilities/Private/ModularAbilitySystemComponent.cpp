@@ -4,6 +4,7 @@
 #include "ModularAbilitySystemComponent.h"
 
 #include "AbilitySystemLog.h"
+#include "ModularAbilityTagRelationshipMapping.h"
 #include "Abilities/ModularGameplayAbility.h"
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(ModularAbilitySystemComponent)
@@ -102,6 +103,22 @@ void UModularAbilitySystemComponent::CancelActivationGroupAbilities(
 	};
 
 	CancelAbilitiesByFunc(ShouldCancelFunc, bReplicateCancelAbilities);
+}
+
+void UModularAbilitySystemComponent::SetTagRelationshipMapping(UModularAbilityTagRelationshipMapping* NewMapping)
+{
+	TagRelationshipMapping = NewMapping;
+}
+
+void UModularAbilitySystemComponent::GetAdditionalActivationTagRequirements(
+	const FGameplayTagContainer& AbilityTags,
+	FGameplayTagContainer& OutActivationRequired,
+	FGameplayTagContainer& OutActivationBlocked) const
+{
+	if (TagRelationshipMapping)
+	{
+		TagRelationshipMapping->GetActivationRequiredAndBlockedTags(AbilityTags, &OutActivationRequired, &OutActivationBlocked);
+	}
 }
 
 void UModularAbilitySystemComponent::AbilitySpecInputPressed(FGameplayAbilitySpec& Spec)
@@ -225,6 +242,21 @@ PRAGMA_ENABLE_DEPRECATION_WARNINGS
 	}
 
 	TryActivateAbilitiesOnSpawn();
+}
+
+void UModularAbilitySystemComponent::ApplyAbilityBlockAndCancelTags(
+	const FGameplayTagContainer& AbilityTags, UGameplayAbility* RequestingAbility, bool bEnableBlockTags,
+	const FGameplayTagContainer& BlockTags, bool bExecuteCancelTags, const FGameplayTagContainer& CancelTags)
+{
+	FGameplayTagContainer BlockTagsCopy = BlockTags;
+	FGameplayTagContainer CancelTagsCopy = CancelTags;
+
+	if (TagRelationshipMapping)
+	{
+		TagRelationshipMapping->GetAbilityTagsToBlockAndCancel(AbilityTags, &BlockTagsCopy, &CancelTagsCopy);
+	}
+	
+	Super::ApplyAbilityBlockAndCancelTags(AbilityTags, RequestingAbility, bEnableBlockTags, BlockTagsCopy, bExecuteCancelTags, CancelTagsCopy);
 }
 
 void UModularAbilitySystemComponent::TryActivateAbilitiesOnSpawn()

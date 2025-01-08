@@ -3,6 +3,7 @@
 
 #include "Abilities/ModularGameplayAbility.h"
 
+#include "AbilitySystemGlobals.h"
 #include "AbilitySystemLog.h"
 #include "ModularAbilitySystemComponent.h"
 #include "GameFramework/PlayerState.h"
@@ -292,6 +293,119 @@ void UModularGameplayAbility::ApplyCooldown(const FGameplayAbilitySpecHandle Han
 	const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo) const
 {
 	Super::ApplyCooldown(Handle, ActorInfo, ActivationInfo);
+}
+
+bool UModularGameplayAbility::DoesAbilitySatisfyTagRequirements(
+	const UAbilitySystemComponent& AbilitySystemComponent,
+	const FGameplayTagContainer* SourceTags, const FGameplayTagContainer* TargetTags,
+	FGameplayTagContainer* OptionalRelevantTags) const
+{
+	// Specialized version to handle death exclusion and AbilityTags expansion via ASC
+	bool bBlocked = false;
+	bool bMissing = false;
+
+	const UAbilitySystemGlobals& AbilitySystemGlobals = UAbilitySystemGlobals::Get();
+	const FGameplayTag& BlockedTag = AbilitySystemGlobals.ActivateFailTagsBlockedTag;
+	const FGameplayTag& MissingTag = AbilitySystemGlobals.ActivateFailTagsMissingTag;
+
+	// CHeck if any of this ability's tags are already blocked
+	if (AbilitySystemComponent.AreAbilityTagsBlocked(GetAssetTags()))
+	{
+		bBlocked = true;
+	}
+
+	const UModularAbilitySystemComponent* ModularAbilitySystem = Cast<UModularAbilitySystemComponent>(&AbilitySystemComponent);
+	static FGameplayTagContainer AllRequiredTags;
+	static FGameplayTagContainer AllBlockedTags;
+
+	AllRequiredTags = ActivationRequiredTags;
+	AllBlockedTags = ActivationBlockedTags;
+	
+	// Expand our ability tags by adding additional required/blocked tags
+	if (ModularAbilitySystem)
+	{
+		ModularAbilitySystem->GetAdditionalActivationTagRequirements(GetAssetTags(), AllRequiredTags, AllBlockedTags);
+	}
+
+	// Check to see the required/blocked tags for this ability
+	if (AllBlockedTags.Num() || AllRequiredTags.Num())
+	{
+		static FGameplayTagContainer AbilitySystemTags;
+		AbilitySystemTags.Reset();
+		AbilitySystemComponent.GetOwnedGameplayTags(AbilitySystemTags);
+
+		if (AbilitySystemTags.HasAny(AllBlockedTags))
+		{
+			if (OptionalRelevantTags) // Add additional tag checks
+			{
+				
+			}
+
+			bBlocked = true;
+		}
+
+		if (!AbilitySystemTags.HasAll(AllRequiredTags))
+		{
+			bMissing = true;
+		}
+	}
+
+	// Check source required/blocked tags
+	if (SourceTags != nullptr)
+	{
+		if (SourceBlockedTags.Num() || SourceRequiredTags.Num())
+		{
+			if (SourceTags->HasAny(SourceBlockedTags))
+			{
+				bBlocked = true;
+			}
+
+			if (!SourceTags->HasAll(SourceRequiredTags))
+			{
+				bMissing = true;
+			}
+		}
+	}
+
+	// Check target required/blocked tags
+	if (TargetTags != nullptr)
+	{
+		if (TargetBlockedTags.Num() || TargetRequiredTags.Num())
+		{
+			if (TargetTags->HasAny(TargetBlockedTags))
+			{
+				bBlocked = true;
+			}
+
+			if (!TargetTags->HasAll(TargetRequiredTags))
+			{
+				bMissing = true;
+			}
+		}
+	}
+
+	// Fill out the relevant tags
+	if (bBlocked)
+	{
+		if (OptionalRelevantTags && BlockedTag.IsValid())
+		{
+			OptionalRelevantTags->AddTag(BlockedTag);
+		}
+
+		return false;
+	}
+
+	if (bMissing)
+	{
+		if (OptionalRelevantTags && MissingTag.IsValid())
+		{
+			OptionalRelevantTags->AddTag(MissingTag);
+		}
+
+		return false;
+	}
+
+	return true;
 }
 
 void UModularGameplayAbility::OnPawnAvatarSet()

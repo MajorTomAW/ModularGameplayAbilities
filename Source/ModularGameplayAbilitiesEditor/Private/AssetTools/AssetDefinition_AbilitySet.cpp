@@ -4,10 +4,14 @@
 #include "AssetDefinition_AbilitySet.h"
 
 #include "ModularAbilitySet.h"
+#include "ModularAbilityTagRelationshipMapping.h"
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(AssetDefinition_AbilitySet)
 
 #define LOCTEXT_NAMESPACE "ModularGameplayAbilitiesEditor"
+
+//////////////////////////////////////////////////////////////////////////
+/// UAssetDefinition_AbilitySet
 
 FText UAssetDefinition_AbilitySet::GetAssetDisplayName() const
 {
@@ -25,6 +29,34 @@ TSoftClassPtr<> UAssetDefinition_AbilitySet::GetAssetClass() const
 }
 
 TConstArrayView<FAssetCategoryPath> UAssetDefinition_AbilitySet::GetAssetCategories() const
+{
+	static const auto Categories =
+	{
+		FAssetCategoryPath(LOCTEXT("CategoryLabel", "Ability System"), LOCTEXT("SubCategoryLabel", "Data"))
+	};
+
+	return Categories;
+}
+
+//////////////////////////////////////////////////////////////////////////
+/// UAssetDefinition_TagRelationshipMapping
+
+FText UAssetDefinition_TagRelationshipMapping::GetAssetDisplayName() const
+{
+	return LOCTEXT("AssetDisplayName", "Tag Relationship");
+}
+
+FLinearColor UAssetDefinition_TagRelationshipMapping::GetAssetColor() const
+{
+	return FLinearColor(FColor(149,70, 255));
+}
+
+TSoftClassPtr<> UAssetDefinition_TagRelationshipMapping::GetAssetClass() const
+{
+	return UModularAbilityTagRelationshipMapping::StaticClass();
+}
+
+TConstArrayView<FAssetCategoryPath> UAssetDefinition_TagRelationshipMapping::GetAssetCategories() const
 {
 	static const auto Categories =
 	{

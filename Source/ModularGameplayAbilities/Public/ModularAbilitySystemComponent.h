@@ -8,6 +8,7 @@
 
 #include "ModularAbilitySystemComponent.generated.h"
 
+class UModularAbilityTagRelationshipMapping;
 class UModularGameplayAbility;
 
 /**
@@ -62,6 +63,12 @@ public:
 	/** Cancels all abilities in the specified activation group. */
 	void CancelActivationGroupAbilities(EGameplayAbilityActivationGroup::Type Group, UModularGameplayAbility* AbilityToIgnore, bool bReplicateCancelAbilities = true);
 
+	/** Sets the current tag relationship mapping. */
+	virtual void SetTagRelationshipMapping(UModularAbilityTagRelationshipMapping* NewMapping);
+
+	/** Looks at ability tags and gathers additional required and blocked tags. */
+	virtual void GetAdditionalActivationTagRequirements(const FGameplayTagContainer& AbilityTags, FGameplayTagContainer& OutActivationRequired, FGameplayTagContainer& OutActivationBlocked) const;
+
 public:
 	//~ Begin UAbilitySystemComponent Interface
 	virtual void AbilitySpecInputPressed(FGameplayAbilitySpec& Spec) override;
@@ -72,9 +79,15 @@ public:
 	virtual void NotifyAbilityEnded(FGameplayAbilitySpecHandle Handle, UGameplayAbility* Ability, bool bWasCancelled) override;
 
 	virtual void InitAbilityActorInfo(AActor* InOwnerActor, AActor* InAvatarActor) override;
+
+	virtual void ApplyAbilityBlockAndCancelTags(const FGameplayTagContainer& AbilityTags, UGameplayAbility* RequestingAbility, bool bEnableBlockTags, const FGameplayTagContainer& BlockTags, bool bExecuteCancelTags, const FGameplayTagContainer& CancelTags) override;
 	//~ End UAbilitySystemComponent Interface
 
 protected:
+	/** If set, this table is used to look up tag relationships for abilities. */
+	UPROPERTY()
+	TObjectPtr<UModularAbilityTagRelationshipMapping> TagRelationshipMapping;
+	
 	TArray<FGameplayAbilitySpecHandle> InputPressedHandles;		// Handles to abilities that input activated this frame
 	TArray<FGameplayAbilitySpecHandle> InputReleasedHandles;	// Handles to abilities that input released this frame
 	TArray<FGameplayAbilitySpecHandle> InputHeldHandles;		// Handles to abilities that are currently input held
