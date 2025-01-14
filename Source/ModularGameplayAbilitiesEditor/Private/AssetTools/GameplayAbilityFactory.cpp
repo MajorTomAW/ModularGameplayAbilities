@@ -8,6 +8,7 @@
 #include "ModularGameplayAbilitiesClassFilter.h"
 #include "Abilities/GameplayAbility.h"
 #include "Kismet2/KismetEditorUtilities.h"
+#include "Kismet2/SClassPickerDialog.h"
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(GameplayAbilityFactory)
 
@@ -25,22 +26,11 @@ UGameplayAbilityFactory::UGameplayAbilityFactory()
 	bEditAfterNew = true;
 	BlueprintType = BPTYPE_Normal;
 
+	CommonAbilityClasses.Add(UGameplayAbility::StaticClass());
+
 	TArray<UClass*> DerivedClasses;
 	GetDerivedClasses(UGameplayAbility::StaticClass(), DerivedClasses);
 	bSkipClassPicker = DerivedClasses.Num() == 0;
-
-	OnConfigurePropertiesDelegate.BindLambda([&](FClassViewerInitializationOptions* Options)
-	{
-		Options->bShowNoneOption = false;
-		Options->ClassFilters.Reset();
-		Options->ClassFilters.Add(MakeShareable(new FModularGameplayAbilitiesClassFilter(UGameplayAbility::StaticClass())));
-		Options->ExtraPickerCommonClasses.Reset();
-		Options->ExtraPickerCommonClasses = CommonAbilityClasses;
-		Options->bIsBlueprintBaseOnly = false;
-		Options->DisplayMode = EClassViewerDisplayMode::ListView;
-		Options->bAllowViewOptions = false;
-		Options->bShowDefaultClasses = false;
-	});
 }
 
 FText UGameplayAbilityFactory::GetDisplayName() const
@@ -58,7 +48,31 @@ bool UGameplayAbilityFactory::ConfigureProperties()
 		return true;
 	}
 	
-	return Super::ConfigureProperties();
+	// Null the parent class to ensure one is selected
+	ParentClass = nullptr;
+
+	// Fill in options
+	TSharedPtr<FModularGameplayAbilitiesClassFilter> Filter = MakeShareable(new FModularGameplayAbilitiesClassFilter(UGameplayAbility::StaticClass()));
+	FClassViewerInitializationOptions Options;
+	{
+		Options.Mode = EClassViewerMode::ClassPicker;
+		Options.NameTypeToDisplay = EClassViewerNameTypeToDisplay::Dynamic;
+		Options.bShowNoneOption = false;
+		Options.ClassFilters.Add(Filter.ToSharedRef());
+		Options.ExtraPickerCommonClasses = CommonAbilityClasses;
+		Options.bShowDefaultClasses = false;
+	}
+
+	const FText TitleText = LOCTEXT("PickParentClass", "Pick Parent Class for New Gameplay Ability");
+	UClass* ChosenClass = nullptr;
+	const bool bPressedOk = SClassPickerDialog::PickClass(TitleText, Options, ChosenClass, UBlueprint::StaticClass());
+
+	if (bPressedOk)
+	{
+		ParentClass = ChosenClass;
+	}
+
+	return bPressedOk;
 }
 
 UObject* UGameplayAbilityFactory::FactoryCreateNew(

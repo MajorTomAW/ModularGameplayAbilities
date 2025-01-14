@@ -167,7 +167,7 @@ void UModularAbilitySet::GiveToAbilitySystem(
 	}
 }
 
-void UModularAbilitySet::GiveToAbilitySystem(UAbilitySystemComponent* AbilitySystem, UObject* SourceObject)
+void UModularAbilitySet::GiveToAbilitySystem(UAbilitySystemComponent* AbilitySystem, UObject* SourceObject) const
 {
 	GiveToAbilitySystem(AbilitySystem, nullptr, SourceObject);
 }
