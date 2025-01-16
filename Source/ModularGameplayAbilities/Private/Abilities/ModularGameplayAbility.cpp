@@ -155,6 +155,12 @@ PRAGMA_ENABLE_DEPRECATION_WARNINGS
 
 	const bool bIsPassiveAbility = (ActivationPolicy == EGameplayAbilityActivationPolicy::Passive);
 
+	// Only passive abilities can be auto-activated on spawn
+	if (!bIsPassiveAbility)
+	{
+		return;
+	}
+
 	auto HasRequiredTags = [&, ASC]()->bool
 	{
 		if (ActivationRequiredTags.IsEmpty())
@@ -174,7 +180,7 @@ PRAGMA_ENABLE_DEPRECATION_WARNINGS
 	if (ActorInfo &&
 		!Spec.IsActive() &&
 		!bIsPredicting &&
-		(bIsPassiveAbility || HasRequiredTags() ))
+		HasRequiredTags())
 	{
 		const AActor* AvatarActor = ActorInfo->AvatarActor.Get();
 
