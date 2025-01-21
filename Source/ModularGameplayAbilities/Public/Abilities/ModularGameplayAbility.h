@@ -45,6 +45,12 @@ public:
 		return ActivationGroup;
 	}
 
+	/** Returns whether the ability should still receive input when passive. */
+	bool IsForceReceiveInput() const
+	{
+		return bForceReceiveInput;
+	}
+
 	/** Returns true if the requested activation group is a valid transition from the current activation group. */
 	UFUNCTION(BlueprintCallable, BlueprintPure = false, Category = Ability, meta = (ExpandBoolAsExecs = "ReturnValue"))
 	bool CanChangeActivationGroup(EGameplayAbilityActivationGroup::Type DesiredGroup);
@@ -100,6 +106,10 @@ protected:
 	/** How the ability is meant to be activated. This can be used to gate abilities from being activated in certain ways. */
 	UPROPERTY(EditDefaultsOnly, Category = Activation)
 	TEnumAsByte<EGameplayAbilityActivationPolicy::Type> ActivationPolicy;
+
+	/** Useful for passive or triggered abilities that should still receive input. */
+	UPROPERTY(EditDefaultsOnly, Category = Activation, meta = (EditConditionHides, EditCondition = "ActivationPolicy != EGameplayAbilityActivationPolicy::Active"))
+	uint8 bForceReceiveInput : 1;
 
 	/** How the ability activates in relation to other abilities. */
 	UPROPERTY(EditDefaultsOnly, Category = Activation)

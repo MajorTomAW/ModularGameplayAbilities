@@ -353,7 +353,7 @@ void UModularAbilitySystemComponent::CancelInputActivatedAbilities(bool bReplica
 	auto ShouldCancelFunc = [this](const UModularGameplayAbility* Ability, FGameplayAbilitySpecHandle Handle)
 	{
 		const EGameplayAbilityActivationPolicy::Type ActivationPolicy = Ability->GetActivationPolicy();
-		return ActivationPolicy == EGameplayAbilityActivationPolicy::Active;
+		return (ActivationPolicy == EGameplayAbilityActivationPolicy::Active) || Ability->IsForceReceiveInput();
 	};
 
 	CancelAbilitiesByFunc(ShouldCancelFunc, bReplicateCancelAbility);
@@ -376,7 +376,15 @@ void UModularAbilitySystemComponent::AbilityInputTagPressed(const FGameplayTag& 
 				continue;
 			}
 
-			if (CDO->GetActivationPolicy() != EGameplayAbilityActivationPolicy::Active)
+			if ((CDO->GetActivationPolicy() != EGameplayAbilityActivationPolicy::Active) &&
+				!CDO->IsForceReceiveInput())
+			{
+				continue;
+			}
+
+			// If the ability is already held, don't add it again
+			// Otherwise the ability will keep activating
+			if (InputHeldHandles.Contains(Spec.Handle))
 			{
 				continue;
 			}
@@ -432,7 +440,7 @@ void UModularAbilitySystemComponent::ProcessAbilityInput(float DeltaTime, bool b
 			}
 			
 			const UModularGameplayAbility* CDO = Cast<UModularGameplayAbility>(Spec->Ability);
-			if (CDO && CDO->GetActivationPolicy() == EGameplayAbilityActivationPolicy::Active)
+			if (CDO && (CDO->GetActivationPolicy() == EGameplayAbilityActivationPolicy::Active) && CDO->IsForceReceiveInput())
 			{
 				HandlesToActivate.AddUnique(Handle);
 			}
@@ -460,7 +468,8 @@ void UModularAbilitySystemComponent::ProcessAbilityInput(float DeltaTime, bool b
 			{
 				const UModularGameplayAbility* CDO = Cast<UModularGameplayAbility>(Spec->Ability);
 
-				if (CDO && CDO->GetActivationPolicy() == EGameplayAbilityActivationPolicy::Active)
+				if (CDO && (
+					(CDO->GetActivationPolicy() == EGameplayAbilityActivationPolicy::Active) || CDO->IsForceReceiveInput()))
 				{
 					HandlesToActivate.AddUnique(Handle);
 				}
