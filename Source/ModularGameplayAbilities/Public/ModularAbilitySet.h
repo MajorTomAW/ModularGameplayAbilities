@@ -125,15 +125,15 @@ public:
 
 protected:
 	/** Abilities to grant when this set is given. */
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Abilities")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Abilities", meta = (TitleProperty=AbilityClass))
 	TArray<FModularAbilitySet_GameplayAbility> Abilities;
 
 	/** Effects to grant when this set is given. */
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Effects")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Effects", meta = (TitleProperty=EffectClass))
 	TArray<FModularAbilitySet_GameplayEffect> Effects;
 
 	/** Attribute sets to grant when this set is given. */
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Attributes")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Attributes", meta = (TitleProperty=AttributeSetClass))
 	TArray<FModularAbilitySet_AttributeSet> AttributeSets;
 
 protected:
