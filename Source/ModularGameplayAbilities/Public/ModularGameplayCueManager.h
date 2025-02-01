@@ -18,7 +18,7 @@ public:
 	UModularGameplayCueManager(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
 
 	static UModularGameplayCueManager* Get();
-	static void DumpGameplayCues(const TArray<FString>& Args);
+	static void DumpGameplayCues();
 
 	//~ Begin UGameplayCueManager Interface
 	virtual void OnCreated() override;

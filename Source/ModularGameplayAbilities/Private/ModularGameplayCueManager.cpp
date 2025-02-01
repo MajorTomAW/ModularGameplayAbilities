@@ -37,7 +37,7 @@ namespace ModularGameplayCueManagerCVars
 	(
 		TEXT("AbilitySystem.DumpGameplayCues"),
 		TEXT("Shows all the assets that were loaded via the ModularGameplayCueManager and are currently in memory. (Args: Refs)"),
-		FConsoleCommandWithArgsDelegate::CreateStatic(UModularGameplayCueManager::DumpGameplayCues)
+		FConsoleCommandDelegate::CreateStatic(UModularGameplayCueManager::DumpGameplayCues)
 	);
 
 	static EModularGameplayCueEditorLoadMode LoadMode = EModularGameplayCueEditorLoadMode::LoadUpfront;
@@ -75,8 +75,9 @@ UModularGameplayCueManager* UModularGameplayCueManager::Get()
 	return Cast<UModularGameplayCueManager>(UAbilitySystemGlobals::Get().GetGameplayCueManager());
 }
 
-void UModularGameplayCueManager::DumpGameplayCues(const TArray<FString>& Args)
+void UModularGameplayCueManager::DumpGameplayCues()
 {
+	TArray<FString> Args;
 	UModularGameplayCueManager* GCM = Get();
 	if (!GCM)
 	{
