@@ -49,7 +49,7 @@ DECLARE_MULTICAST_DELEGATE_SixParams(FGameplayAttributeEvent, AActor* /*EffectIn
 	GAMEPLAY_ATTRIBUTE_NOTIFY(PropertyName)															
 
 /** Accessor macro for attribute properties with notify delegate and out of bounds delegate */
-#define ATTRIBUTE_ACCESSORS_NOTIFY_PLUS(ClassName, PropertyName)									\
+#define ATTRIBUTE_ACCESSORS_NOTIFY_DEPLETED(ClassName, PropertyName)									\
 	GAMEPLAYATTRIBUTE_PROPERTY_GETTER(ClassName, PropertyName)										\
 	GAMEPLAYATTRIBUTE_VALUE_GETTER(PropertyName)													\
 	GAMEPLAYATTRIBUTE_VALUE_SETTER(PropertyName)													\
@@ -72,8 +72,8 @@ DECLARE_MULTICAST_DELEGATE_SixParams(FGameplayAttributeEvent, AActor* /*EffectIn
 	}																								\
 	else																							\
 	{																								\
-		GetOwningAbilitySystemComponent()->SetBaseAttributeValueFromReplication(					\
-			FGameplayAttribute(ThisProperty), PropertyName, OldValue);								\
+		GetOwningAbilitySystemComponentChecked()->SetBaseAttributeValueFromReplication(				\
+				FGameplayAttribute(ThisProperty), PropertyName, OldValue);							\
 	}																								\
 }
 
