@@ -255,6 +255,11 @@ void UModularGameplayAbility::OnGiveAbility(const FGameplayAbilityActorInfo* Act
 	K2_OnAbilityAdded();
 
 	TryActivateAbilityOnSpawn(ActorInfo, Spec);
+
+	if (bStartWithCooldown)
+	{
+		ApplyCooldown(Spec.Handle, ActorInfo, GetCurrentActivationInfo());
+	}
 }
 
 void UModularGameplayAbility::OnRemoveAbility(const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilitySpec& Spec)
@@ -295,10 +300,45 @@ void UModularGameplayAbility::ApplyCost(const FGameplayAbilitySpecHandle Handle,
 	Super::ApplyCost(Handle, ActorInfo, ActivationInfo);
 }
 
-void UModularGameplayAbility::ApplyCooldown(const FGameplayAbilitySpecHandle Handle,
-	const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo) const
+bool UModularGameplayAbility::CheckCooldown(
+	const FGameplayAbilitySpecHandle Handle,
+	const FGameplayAbilityActorInfo* ActorInfo,
+	FGameplayTagContainer* OptionalRelevantTags) const
 {
-	Super::ApplyCooldown(Handle, ActorInfo, ActivationInfo);
+	return Super::CheckCooldown(Handle, ActorInfo, OptionalRelevantTags);
+}
+
+void UModularGameplayAbility::ApplyCooldown(
+	const FGameplayAbilitySpecHandle Handle,
+	const FGameplayAbilityActorInfo* ActorInfo,
+	const FGameplayAbilityActivationInfo ActivationInfo) const
+{
+	const int32 AbilityLevel = GetAbilityLevel(Handle, ActorInfo);
+
+	// Check if we have a cooldown effect
+	UGameplayEffect* CooldownEffect = GetCooldownGameplayEffect();
+	if (CooldownEffect != nullptr)
+	{
+		ApplyGameplayEffectToOwner(Handle, ActorInfo, ActivationInfo, CooldownEffect, AbilityLevel);
+		return;
+	}
+
+	// If we don't have a cooldown effect,
+	// check if we have an explicit cooldown duration
+	if (ExplicitCooldownDuration.Value > 0.0f)
+	{
+		CooldownEffect = UGameplayEffect::StaticClass()->GetDefaultObject<UGameplayEffect>();
+		check(CooldownEffect);
+
+		// Set the properties of the cooldown effect
+		CooldownEffect->DurationPolicy = EGameplayEffectDurationType::HasDuration;
+		CooldownEffect->DurationMagnitude = FGameplayEffectModifierMagnitude(ExplicitCooldownDuration.GetValueAtLevel(AbilityLevel));
+		CooldownEffect->CachedAssetTags.AppendTags(ExplicitCooldownAssetTags);
+		CooldownEffect->CachedGrantedTags.AppendTags(ExplicitCooldownTags);
+
+		// Apply the cooldown effect
+		ApplyGameplayEffectToOwner(Handle, ActorInfo, ActivationInfo, CooldownEffect, AbilityLevel);
+	}
 }
 
 bool UModularGameplayAbility::DoesAbilitySatisfyTagRequirements(
@@ -412,6 +452,21 @@ bool UModularGameplayAbility::DoesAbilitySatisfyTagRequirements(
 	}
 
 	return true;
+}
+
+const FGameplayTagContainer* UModularGameplayAbility::GetCooldownTags() const
+{
+	if (UGameplayEffect* CDGE = GetCooldownGameplayEffect())
+	{
+		return &CDGE->GetGrantedTags();
+	}
+
+	if (ExplicitCooldownDuration.Value > 0.0f)
+	{
+		return &ExplicitCooldownTags;
+	}
+
+	return nullptr;
 }
 
 void UModularGameplayAbility::OnPawnAvatarSet()
