@@ -17,6 +17,16 @@
 ////////////////////////////////////////////////////////////////////////
 /// FModularAbilitySet_GrantedHandles
 
+void FModularAbilitySet_GrantedHandles::AppendHandles(const FModularAbilitySet_GrantedHandles& InGrantedHandles)
+{
+	AppendAttributeSets(InGrantedHandles.GrantedAttributeSets);
+	AppendAbilitySpecHandles(InGrantedHandles.GrantedAbilityHandles);
+	AppendGameplayEffectHandles(InGrantedHandles.GrantedEffectHandles);
+}
+
+
+
+
 void FModularAbilitySet_GrantedHandles::AddAbilitySpecHandle(const FGameplayAbilitySpecHandle& InHandle)
 {
 	if (InHandle.IsValid())
@@ -24,6 +34,16 @@ void FModularAbilitySet_GrantedHandles::AddAbilitySpecHandle(const FGameplayAbil
 		GrantedAbilityHandles.Add(InHandle);
 	}
 }
+void FModularAbilitySet_GrantedHandles::AppendAbilitySpecHandles(const TArray<FGameplayAbilitySpecHandle>& InHandles)
+{
+	for (const auto& Handle : InHandles)
+	{
+		AddAbilitySpecHandle(Handle);
+	}
+}
+
+
+
 
 void FModularAbilitySet_GrantedHandles::AddGameplayEffectHandle(const FActiveGameplayEffectHandle& InHandle)
 {
@@ -32,6 +52,17 @@ void FModularAbilitySet_GrantedHandles::AddGameplayEffectHandle(const FActiveGam
 		GrantedEffectHandles.Add(InHandle);
 	}
 }
+void FModularAbilitySet_GrantedHandles::AppendGameplayEffectHandles(const TArray<FActiveGameplayEffectHandle>& InHandles)
+{
+	for (const auto& Handle : InHandles)
+	{
+		AddGameplayEffectHandle(Handle);
+	}
+}
+
+
+
+
 
 void FModularAbilitySet_GrantedHandles::AddAttributeSet(UAttributeSet* InAttributeSet)
 {
@@ -40,6 +71,17 @@ void FModularAbilitySet_GrantedHandles::AddAttributeSet(UAttributeSet* InAttribu
 		GrantedAttributeSets.Add(InAttributeSet);
 	}
 }
+void FModularAbilitySet_GrantedHandles::AppendAttributeSets(const TArray<UAttributeSet*>& InAttributeSets)
+{
+	for (UAttributeSet* Set : InAttributeSets)
+	{
+		AddAttributeSet(Set);
+	}
+}
+
+
+
+
 
 void FModularAbilitySet_GrantedHandles::TakeFromAbilitySystem(UAbilitySystemComponent* AbilitySystem)
 {
@@ -159,6 +201,7 @@ void UModularAbilitySet::GiveToAbilitySystem(
 		}
 
 		UAttributeSet* NewSet = NewObject<UAttributeSet>(AbilitySystem->GetOwner(), AttributeSet.AttributeSetClass);
+		AbilitySystem->AddAttributeSetSubobject(NewSet);
 
 		if (OutGrantedHandles)
 		{

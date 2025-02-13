@@ -105,6 +105,11 @@ bool UModularAbilitySubsystem::ShouldCreateSubsystem(UObject* Outer) const
 	return DerivedClasses.Num() == 0;
 }
 
+UModularAbilitySubsystem* UModularAbilitySubsystem::Get(const UObject* WorldContextObject)
+{
+	return WorldContextObject ? WorldContextObject->GetWorld()->GetSubsystem<UModularAbilitySubsystem>() : nullptr;
+}
+
 void UModularAbilitySubsystem::RegisterAbilitySystem(UModularAbilitySystemComponent* AbilitySystem, bool bGrantPendingAbilities, bool bGrantPendingEffects)
 {
 	check(AbilitySystem);

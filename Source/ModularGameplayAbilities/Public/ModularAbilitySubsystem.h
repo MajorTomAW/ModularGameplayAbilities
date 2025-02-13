@@ -56,6 +56,8 @@ public:
 	virtual bool ShouldCreateSubsystem(UObject* Outer) const override;
 	//~ End UWorldSubsystem Interface
 
+	static UModularAbilitySubsystem* Get(const UObject* WorldContextObject);
+
 	/**
 	 * Registers an ability system component with the subsystem.
 	 *

@@ -4,6 +4,7 @@
 #include "ModularAbilitySystemComponent.h"
 
 #include "AbilitySystemLog.h"
+#include "ModularAbilitySubsystem.h"
 #include "ModularAbilityTagRelationshipMapping.h"
 #include "Abilities/ModularGameplayAbility.h"
 
@@ -21,6 +22,12 @@ UModularAbilitySystemComponent::UModularAbilitySystemComponent(const FObjectInit
 
 void UModularAbilitySystemComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
+	// Unregister from the global ability system
+	if (UModularAbilitySubsystem* AbilitySub = UModularAbilitySubsystem::Get(this))
+	{
+		AbilitySub->UnregisterAbilitySystem(this);
+	}
+	
 	Super::EndPlay(EndPlayReason);
 }
 
@@ -239,6 +246,12 @@ PRAGMA_DISABLE_DEPRECATION_WARNINGS
 			AbilityCDO->OnPawnAvatarSet();
 		}
 PRAGMA_ENABLE_DEPRECATION_WARNINGS
+	}
+
+	// Register with the global ability subsystem.
+	if (UModularAbilitySubsystem* AbilitySub = UModularAbilitySubsystem::Get(this))
+	{
+		AbilitySub->RegisterAbilitySystem(this);
 	}
 
 	TryActivateAbilitiesOnSpawn();
