@@ -7,6 +7,7 @@
 #include "AbilitySystemLog.h"
 #include "ModularAbilitySystemComponent.h"
 #include "GameFramework/PlayerState.h"
+#include "Misc/DataValidation.h"
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(ModularGameplayAbility)
 
@@ -206,6 +207,11 @@ PRAGMA_ENABLE_DEPRECATION_WARNINGS
 	}
 }
 
+void UModularGameplayAbility::GetOwnedGameplayTags(FGameplayTagContainer& TagContainer) const
+{
+	TagContainer.AppendTags(GetAssetTags());
+}
+
 bool UModularGameplayAbility::CanActivateAbility(
 	const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo,
 	const FGameplayTagContainer* SourceTags, const FGameplayTagContainer* TargetTags, FGameplayTagContainer* OptionalRelevantTags) const
@@ -317,28 +323,32 @@ void UModularGameplayAbility::ApplyCooldown(
 
 	// Check if we have a cooldown effect
 	UGameplayEffect* CooldownEffect = GetCooldownGameplayEffect();
-	if (CooldownEffect != nullptr)
+	if (!IsValid(CooldownEffect))
 	{
-		ApplyGameplayEffectToOwner(Handle, ActorInfo, ActivationInfo, CooldownEffect, AbilityLevel);
 		return;
 	}
+	FGameplayEffectSpecHandle CooldownSpecHandle = MakeOutgoingGameplayEffectSpec(CooldownEffect->GetClass(), AbilityLevel);
 
-	// If we don't have a cooldown effect,
-	// check if we have an explicit cooldown duration
-	if (ExplicitCooldownDuration.Value > 0.0f)
+	// Check if we have valid cooldown tags
+	if (HasExplicitCooldownDuration())
 	{
-		CooldownEffect = UGameplayEffect::StaticClass()->GetDefaultObject<UGameplayEffect>();
-		check(CooldownEffect);
-
-		// Set the properties of the cooldown effect
-		CooldownEffect->DurationPolicy = EGameplayEffectDurationType::HasDuration;
-		CooldownEffect->DurationMagnitude = FGameplayEffectModifierMagnitude(ExplicitCooldownDuration.GetValueAtLevel(AbilityLevel));
-		CooldownEffect->CachedAssetTags.AppendTags(ExplicitCooldownAssetTags);
-		CooldownEffect->CachedGrantedTags.AppendTags(ExplicitCooldownTags);
-
-		// Apply the cooldown effect
-		ApplyGameplayEffectToOwner(Handle, ActorInfo, ActivationInfo, CooldownEffect, AbilityLevel);
+		if (ExplicitCooldownTags.IsValid())
+		{
+			CooldownSpecHandle.Data->AppendDynamicAssetTags(ExplicitCooldownAssetTags);
+			CooldownSpecHandle.Data->DynamicGrantedTags.AppendTags(ExplicitCooldownTags);	
+		}
+		else
+		{
+			ABILITY_LOG(Error, TEXT("ExplicitCooldownTags are not valid for ability %s. Cooldown will not be applied."), *GetName());
+			return;
+		}
 	}
+
+	// Apply cooldown
+	ApplyGameplayEffectSpecToOwner(Handle, ActorInfo, ActivationInfo, CooldownSpecHandle);
+
+	// Let others know we applied a cooldown
+	OnApplyCooldownDelegate.Broadcast(this, ExplicitCooldownDuration.GetValueAtLevel(AbilityLevel), ExplicitCooldownTags);
 }
 
 bool UModularGameplayAbility::DoesAbilitySatisfyTagRequirements(
@@ -477,3 +487,18 @@ void UModularGameplayAbility::OnPawnAvatarSet()
 void UModularGameplayAbility::NativeOnAbilityFailedToActivate(const FGameplayTagContainer& FailedReason) const
 {
 }
+
+#if WITH_EDITOR
+EDataValidationResult UModularGameplayAbility::IsDataValid(class FDataValidationContext& Context) const
+{
+	EDataValidationResult Result = Super::IsDataValid(Context);
+
+	if (GetInstancingPolicy() == EGameplayAbilityInstancingPolicy::NonInstanced)
+	{
+		Result = EDataValidationResult::Invalid;
+		Context.AddError(NSLOCTEXT("ModularGameplayAbilities", "NonInstancedAbilityError", "NonInstanced abilities are deprecated. Use InstancedPerActor instead."));
+	}
+
+	return Result;
+}
+#endif

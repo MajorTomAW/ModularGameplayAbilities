@@ -7,14 +7,14 @@
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(AssetDefinition_GameplayAbility)
 
-#define LOCTEXT_NAMESPACE "GameplayAbilities"
+#define LOCTEXT_NAMESPACE "ModularGameplayAbilitiesEditorPlugin"
 
 //////////////////////////////////////////////////////////////////////////
 /// UAssetDefinition_GameplayAbility
 
 FText UAssetDefinition_GameplayAbility::GetAssetDisplayName() const
 {
-	return LOCTEXT("AssetDisplayName", "Gameplay Ability");
+	return LOCTEXT("AssetDisplayName_GameplayAbility", "Gameplay Ability");
 }
 
 FLinearColor UAssetDefinition_GameplayAbility::GetAssetColor() const
@@ -31,7 +31,7 @@ TConstArrayView<FAssetCategoryPath> UAssetDefinition_GameplayAbility::GetAssetCa
 {
 	static const auto Categories =
 	{
-		FAssetCategoryPath(LOCTEXT("CategoryLabel", "Ability System"))
+		FAssetCategoryPath(LOCTEXT("CategoryLabel_GameplayAbility", "Ability System"))
 	};
 
 	return Categories;
@@ -42,7 +42,7 @@ TConstArrayView<FAssetCategoryPath> UAssetDefinition_GameplayAbility::GetAssetCa
 
 FText UAssetDefinition_GameplayEffect::GetAssetDisplayName() const
 {
-	return LOCTEXT("AssetDisplayName", "Gameplay Effect");
+	return LOCTEXT("AssetDisplayName_GameplayEffect", "Gameplay Effect");
 }
 
 FLinearColor UAssetDefinition_GameplayEffect::GetAssetColor() const
@@ -59,7 +59,7 @@ TConstArrayView<FAssetCategoryPath> UAssetDefinition_GameplayEffect::GetAssetCat
 {
 	static const auto Categories =
 	{
-		FAssetCategoryPath(LOCTEXT("CategoryLabel", "Ability System"))
+		FAssetCategoryPath(LOCTEXT("CategoryLabel_GameplayEffect", "Ability System"))
 	};
 
 	return Categories;

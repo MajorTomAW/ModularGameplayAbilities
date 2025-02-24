@@ -12,13 +12,20 @@
  * Adds more functionality and customization options in the context of activation, failure, etc.
  */
 UCLASS(Blueprintable, HideCategories = Input)
-class MODULARGAMEPLAYABILITIES_API UModularGameplayAbility : public UGameplayAbility
+class MODULARGAMEPLAYABILITIES_API UModularGameplayAbility
+	: public UGameplayAbility
+	, public IGameplayTagAssetInterface
 {
 	GENERATED_BODY()
 	friend class UModularAbilitySystemComponent;
 	
 public:
 	UModularGameplayAbility(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
+
+	DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FModularAbilitySignature,
+		const UModularGameplayAbility*, ModularAbility);
+	DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnApplyCooldownDelegate,
+		const UModularGameplayAbility*, Ability, float, Duration, const FGameplayTagContainer&, CooldownTags);
 
 public:
 	// ----------------------------------------------------------------------------------------------------------------
@@ -51,6 +58,18 @@ public:
 		return bForceReceiveInput;
 	}
 
+	/** Returns true if this ability should have an explicit cooldown duration. (aka it is not 0)*/
+	bool HasExplicitCooldownDuration() const
+	{
+		return ExplicitCooldownDuration.Value > 0.0f;
+	}
+
+	/** Returns the explicit cooldown duration of this ability. */
+	FScalableFloat GetExplicitCooldownDuration() const
+	{
+		return ExplicitCooldownDuration;
+	}
+
 	/** Returns true if the requested activation group is a valid transition from the current activation group. */
 	UFUNCTION(BlueprintCallable, BlueprintPure = false, Category = Ability, meta = (ExpandBoolAsExecs = "ReturnValue"))
 	bool CanChangeActivationGroup(EGameplayAbilityActivationGroup::Type DesiredGroup);
@@ -61,6 +80,17 @@ public:
 
 	/** Tries to activate this ability on spawn. (For Passive abilities) */
 	virtual void TryActivateAbilityOnSpawn(const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilitySpec& Spec) const;
+
+	//~ Begin IGameplayTagAssetInterface Interface
+	virtual void GetOwnedGameplayTags(FGameplayTagContainer& TagContainer) const override;
+	//~ End IGameplayTagAssetInterface Interface
+
+	/**
+	 * A delegate that gets fired whenever the ApplyCooldown() function is called on this ability.
+	 * @Note This will only work property for an ability that is instantiated per actor.
+	 */
+	UPROPERTY(BlueprintAssignable)
+	FOnApplyCooldownDelegate OnApplyCooldownDelegate;
 
 protected:
 	//~ Begin UGameplayAbility Interface
@@ -82,6 +112,12 @@ protected:
 
 	virtual const FGameplayTagContainer* GetCooldownTags() const override;
 	//~ End UGameplayAbility Interface
+
+	//~ Begin UObject Interface
+#if WITH_EDITOR
+	virtual EDataValidationResult IsDataValid(class FDataValidationContext& Context) const override;
+#endif
+	//~ End UObject Interface
 
 	/** Called when the ability system is initialized with a pawn avatar. */
 	virtual void OnPawnAvatarSet();

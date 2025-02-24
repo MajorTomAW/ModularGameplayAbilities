@@ -8,14 +8,14 @@
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(AssetDefinition_AbilitySet)
 
-#define LOCTEXT_NAMESPACE "ModularGameplayAbilitiesEditor"
+#define LOCTEXT_NAMESPACE "ModularGameplayAbilitiesEditorPlugin"
 
 //////////////////////////////////////////////////////////////////////////
 /// UAssetDefinition_AbilitySet
 
 FText UAssetDefinition_AbilitySet::GetAssetDisplayName() const
 {
-	return LOCTEXT("AssetDisplayName", "Ability Set");
+	return LOCTEXT("AssetDisplayName_AbilitySet", "Ability Set");
 }
 
 FLinearColor UAssetDefinition_AbilitySet::GetAssetColor() const
@@ -32,7 +32,7 @@ TConstArrayView<FAssetCategoryPath> UAssetDefinition_AbilitySet::GetAssetCategor
 {
 	static const auto Categories =
 	{
-		FAssetCategoryPath(LOCTEXT("CategoryLabel", "Ability System"), LOCTEXT("SubCategoryLabel", "Data"))
+		FAssetCategoryPath(LOCTEXT("CategoryLabel_AbilitySet", "Ability System"), LOCTEXT("SubCategoryLabel_AbilitySet", "Data"))
 	};
 
 	return Categories;
@@ -43,7 +43,7 @@ TConstArrayView<FAssetCategoryPath> UAssetDefinition_AbilitySet::GetAssetCategor
 
 FText UAssetDefinition_TagRelationshipMapping::GetAssetDisplayName() const
 {
-	return LOCTEXT("AssetDisplayName", "Tag Relationship");
+	return LOCTEXT("AssetDisplayName_TagRelationship", "Tag Relationship");
 }
 
 FLinearColor UAssetDefinition_TagRelationshipMapping::GetAssetColor() const
@@ -60,7 +60,7 @@ TConstArrayView<FAssetCategoryPath> UAssetDefinition_TagRelationshipMapping::Get
 {
 	static const auto Categories =
 	{
-		FAssetCategoryPath(LOCTEXT("CategoryLabel", "Ability System"), LOCTEXT("SubCategoryLabel", "Data"))
+		FAssetCategoryPath(LOCTEXT("CategoryLabel_TagRelationship", "Ability System"), LOCTEXT("SubCategoryLabel_TagRelationship", "Data"))
 	};
 
 	return Categories;
