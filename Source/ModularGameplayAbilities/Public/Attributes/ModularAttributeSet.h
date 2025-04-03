@@ -25,11 +25,11 @@ struct FGameplayEffectSpec;
  */
 DECLARE_MULTICAST_DELEGATE_SixParams(FGameplayAttributeEvent, AActor* /*EffectInstigator*/, AActor* /*EffectCauser*/, const FGameplayEffectSpec* /*EffectSpec*/, float /*EffectMagnitude*/, float /*OldValue*/, float /*NewValue*/);
 
-#define GAMEPLAY_ATTRIBUTE_NOTIFY(PropertyName)														\
+#define GAMEPLAYATTRIBUTE_NOTIFY(PropertyName)														\
 	mutable FGameplayAttributeEvent On##PropertyName##Changed;										\
 	float Cached##PropertyName##BeforeAttributeChange;
 
-#define GAMEPLAY_ATTRIBUTE_NOTIFY_OUT(PropertyName)													\
+#define GAMEPLAYATTRIBUTE_NOTIFY_OUT(PropertyName)													\
 	mutable FGameplayAttributeEvent OnOutOf##PropertyName;								\
 	bool bOutOf##PropertyName;
 
@@ -46,7 +46,7 @@ DECLARE_MULTICAST_DELEGATE_SixParams(FGameplayAttributeEvent, AActor* /*EffectIn
 	GAMEPLAYATTRIBUTE_VALUE_GETTER(PropertyName)													\
 	GAMEPLAYATTRIBUTE_VALUE_SETTER(PropertyName)													\
 	GAMEPLAYATTRIBUTE_VALUE_INITTER(PropertyName)													\
-	GAMEPLAY_ATTRIBUTE_NOTIFY(PropertyName)															
+	GAMEPLAYATTRIBUTE_NOTIFY(PropertyName)															
 
 /** Accessor macro for attribute properties with notify delegate and out of bounds delegate */
 #define ATTRIBUTE_ACCESSORS_NOTIFY_DEPLETED(ClassName, PropertyName)									\
@@ -54,8 +54,8 @@ DECLARE_MULTICAST_DELEGATE_SixParams(FGameplayAttributeEvent, AActor* /*EffectIn
 	GAMEPLAYATTRIBUTE_VALUE_GETTER(PropertyName)													\
 	GAMEPLAYATTRIBUTE_VALUE_SETTER(PropertyName)													\
 	GAMEPLAYATTRIBUTE_VALUE_INITTER(PropertyName)													\
-	GAMEPLAY_ATTRIBUTE_NOTIFY(PropertyName)															\
-	GAMEPLAY_ATTRIBUTE_NOTIFY_OUT(PropertyName) \
+	GAMEPLAYATTRIBUTE_NOTIFY(PropertyName)															\
+	GAMEPLAYATTRIBUTE_NOTIFY_OUT(PropertyName) \
 
 /** Lazy RepNotify macro for attribute properties */
 #define LAZY_ATTRIBUTE_REPNOTIFY(ClassName, PropertyName, OldValue)									\
