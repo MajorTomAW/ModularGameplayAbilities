@@ -2,7 +2,9 @@
 
 ## <a id="head"></a> 📋 〢 Overview  
 
-Unreal Engine Plugin for extending the GAS in a Lyra-like manner.
+Unreal Engine Plugin for extending the GAS in a Lyra-like manner.  
+
+---
 
 ## 🌐 〢 Index
 > 1. [Modular Gameplay Ability](#modular-gameplay-ability)  
@@ -10,11 +12,16 @@ Unreal Engine Plugin for extending the GAS in a Lyra-like manner.
 > &nbsp; 1.2 [Failure Management](#mga-failure-management)  
 > &nbsp; 1.3 [(Explicit) Cooldowns](#mga-cooldowns)  
 > &nbsp; 1.4 [AI-Controlled Ability usage](#mga-ai-controlled)  
-> 2. [Lazy-Loading the ASC](#asc-lazyloading)  
+> 2. [Lazy-Loading the ASC](#asc-lazyloading)
+
+---
+
 
 <a name="modular-gameplay-ability"></a>  
 ## 1. Modular Gameplay Ability
 The _[UModularGameplayAbilty](Source/ModularGameplayAbilities/Public/Abilities/ModularGameplayAbility.h)_ is an extended version of the base ``UGameplayAbility`` providing more functionality and customization options in the context of activation, failure, cooldowns, etc.  
+
+---
 
 <a name="mga-activation"></a>  
 ### 📣 〢 Activation
@@ -33,16 +40,21 @@ Activation Groups are [...]
 
 ![image](https://github.com/user-attachments/assets/9dc85a1f-5803-4ff2-848c-0a28b6d88ae6)
 
+---
 
 <a name="mga-failure-management"></a>    
 ### 📣 〢 Failure Management
 [...]
+
+---
 
 <a name="mga-cooldowns"></a>  
 ### 📣 〢 (Explicit) Cooldowns
 [...]
 
 ![image](https://github.com/user-attachments/assets/f046a9c6-a541-44b7-97d3-d07281b9c848)
+
+---
 
 <a name="mga-ai-controlled"></a>  
 ### 📣 〢 AI-Controlled Ability usage
@@ -52,6 +64,8 @@ E.g. during the Ability activation, if instigated by an AI, it will stop any Beh
 
 ![image](https://github.com/user-attachments/assets/95e978ba-3f17-44fb-9698-0b92750332dd)
 
+---
+
 <a name="asc-lazyloading"></a>  
 ## 2. Lazy-Loading the ASC
 The _[AModularAbilityActor](Source/ModularGameplayAbilities/Public/ModularAbilityActor.h)_ provides logic for an actor that is meant to use the Ability System.
@@ -59,6 +73,8 @@ Thus setting up an example of how to lazy-load the Ability System and manage pen
 [...]
 
 ![image](https://github.com/user-attachments/assets/2557c7a8-4154-44ea-816b-87c760f965f5)  
+
+---
 
 <p align="center">
 If you like this project, leaving a star is much appreciated<br>
