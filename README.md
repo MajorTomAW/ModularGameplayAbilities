@@ -3,10 +3,20 @@
 Unreal Engine Plugin for extending the GAS in a Lyra-like manner.
 
 # 📖 Overview
+> 1. [Modular Gameplay Ability](#modular-gameplay-ability)  
+> &nbsp; 1.1 [Activation](#mga-activation)  
+> &nbsp; 1.2 [Failure Management](#mga-failure-management)  
+> &nbsp; 1.3 [(Explicit) Cooldowns](#mga-cooldowns)  
+> &nbsp; 1.4 [AI-Controlled Ability usage](#mga-ai-controlled)  
+> 2. [Lazy-Loading the ASC](#asc-lazyloading)  
 
+2. Lazy-Loading the ASC
 
-## Modular Gameplay Ability
-The _[UModularGameplayAbilty](Source/ModularGameplayAbilities/Public/Abilities/ModularGameplayAbility.h)_ is an extended version of the base ``UGameplayAbility`` providing more functionality and customization options in the context of activation, failure, cooldowns, etc.
+<a name="modular-gameplay-ability"></a>  
+## 1. Modular Gameplay Ability
+The _[UModularGameplayAbilty](Source/ModularGameplayAbilities/Public/Abilities/ModularGameplayAbility.h)_ is an extended version of the base ``UGameplayAbility`` providing more functionality and customization options in the context of activation, failure, cooldowns, etc.  
+
+<a name="mga-activation"></a>  
 - ### Activation
 Gameplay Ability activation can happen in 3 different ways:  
 | Activation Policy | Description |
@@ -24,16 +34,17 @@ Activation Groups are [...]
 ![image](https://github.com/user-attachments/assets/9dc85a1f-5803-4ff2-848c-0a28b6d88ae6)
 
 
-
-- ### Failure Notifies
+<a name="mga-failure-management"></a>    
+- ### Failure Management
 [...]
 
+<a name="mga-cooldowns"></a>  
 - ### (Explicit) Cooldowns
 [...]
 
 ![image](https://github.com/user-attachments/assets/f046a9c6-a541-44b7-97d3-d07281b9c848)
 
-
+<a name="mga-ai-controlled"></a>  
 - ### AI-Controlled Ability usage
 As Gameplay Abilities are also able to be activated by bot-controlled pawns, the ModularGameplayAbility provides further logic modifying the AI's behavior.  
 E.g. during the Ability activation, if instigated by an AI, it will stop any Behavior Logic / AI Movement / RVO Avoidance / ...
@@ -41,8 +52,8 @@ E.g. during the Ability activation, if instigated by an AI, it will stop any Beh
 
 ![image](https://github.com/user-attachments/assets/95e978ba-3f17-44fb-9698-0b92750332dd)
 
-
-## Lazy-Loading the ASC
+<a name="asc-lazyloading"></a>  
+## 2. Lazy-Loading the ASC
 The _[AModularAbilityActor](Source/ModularGameplayAbilities/Public/ModularAbilityActor.h)_ provides logic for an actor that is meant to use the Ability System.
 Thus setting up an example of how to lazy-load the Ability System and manage pending attribute modifiers for optimal performance.
 [...]
