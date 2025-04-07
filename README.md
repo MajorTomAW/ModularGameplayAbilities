@@ -10,8 +10,6 @@ Unreal Engine Plugin for extending the GAS in a Lyra-like manner.
 > &nbsp; 1.4 [AI-Controlled Ability usage](#mga-ai-controlled)  
 > 2. [Lazy-Loading the ASC](#asc-lazyloading)  
 
-2. Lazy-Loading the ASC
-
 <a name="modular-gameplay-ability"></a>  
 ## 1. Modular Gameplay Ability
 The _[UModularGameplayAbilty](Source/ModularGameplayAbilities/Public/Abilities/ModularGameplayAbility.h)_ is an extended version of the base ``UGameplayAbility`` providing more functionality and customization options in the context of activation, failure, cooldowns, etc.  
