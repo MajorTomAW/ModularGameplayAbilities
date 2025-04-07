@@ -58,4 +58,11 @@ The _[AModularAbilityActor](Source/ModularGameplayAbilities/Public/ModularAbilit
 Thus setting up an example of how to lazy-load the Ability System and manage pending attribute modifiers for optimal performance.
 [...]
 
-![image](https://github.com/user-attachments/assets/2557c7a8-4154-44ea-816b-87c760f965f5)
+![image](https://github.com/user-attachments/assets/2557c7a8-4154-44ea-816b-87c760f965f5)  
+
+<p align="center">
+If you like this project, leaving a star is much appreciated<br>
+<a href="#head">
+Back to the top
+</a>
+</p>
