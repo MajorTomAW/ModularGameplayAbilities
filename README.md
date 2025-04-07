@@ -13,6 +13,7 @@ Unreal Engine Plugin for extending the GAS in a Lyra-like manner.
 > &nbsp; 1.3 [(Explicit) Cooldowns](#mga-cooldowns)  
 > &nbsp; 1.4 [AI-Controlled Ability usage](#mga-ai-controlled)  
 > 2. [Lazy-Loading the ASC](#asc-lazyloading)
+<!--- > 3. [Installing the plugin](#installing) --->
 
 ---
 
