@@ -19,7 +19,7 @@ The _[UModularGameplayAbilty](Source/ModularGameplayAbilities/Public/Abilities/M
 Gameplay Ability activation can happen in 3 different ways:  
 | Activation Policy | Description |
 | -------- | ---------------- |
-| 1. Passive  e.g. "On Spawn"  |  Used for abilities that always apply gameplay effects and/or tags when being given to an ASC |
+| 1. Passive  |  Used for abilities that always apply gameplay effects and/or tags when being given to an ASC. (e.g. "On Spawn") |
 | 2. Triggered | Abilities that should be activated by a trigger (for example a GameplayEvent / Gameplay Message / etc.) |
 | 3. Active | Abilities that should explicitly be activated by player actions. (E.g. pressing an input key) |
   
