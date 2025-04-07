@@ -1,8 +1,10 @@
-# Modular Gameplay Abilities
+# Modular Gameplay Abilities  
+
+## <a id="head"></a> 📋 〢 Overview  
 
 Unreal Engine Plugin for extending the GAS in a Lyra-like manner.
 
-# 📖 Overview
+## 🌐 〢 Index
 > 1. [Modular Gameplay Ability](#modular-gameplay-ability)  
 > &nbsp; 1.1 [Activation](#mga-activation)  
 > &nbsp; 1.2 [Failure Management](#mga-failure-management)  
@@ -15,7 +17,7 @@ Unreal Engine Plugin for extending the GAS in a Lyra-like manner.
 The _[UModularGameplayAbilty](Source/ModularGameplayAbilities/Public/Abilities/ModularGameplayAbility.h)_ is an extended version of the base ``UGameplayAbility`` providing more functionality and customization options in the context of activation, failure, cooldowns, etc.  
 
 <a name="mga-activation"></a>  
-- ### 1.1 Activation
+### 📣 〢 Activation
 Gameplay Ability activation can happen in 3 different ways:  
 | Activation Policy | Description |
 | -------- | ---------------- |
@@ -33,17 +35,17 @@ Activation Groups are [...]
 
 
 <a name="mga-failure-management"></a>    
-- ### 1.2 Failure Management
+### 📣 〢 Failure Management
 [...]
 
 <a name="mga-cooldowns"></a>  
-- ### 1.3 (Explicit) Cooldowns
+### 📣 〢 (Explicit) Cooldowns
 [...]
 
 ![image](https://github.com/user-attachments/assets/f046a9c6-a541-44b7-97d3-d07281b9c848)
 
 <a name="mga-ai-controlled"></a>  
-- ### 1.4 AI-Controlled Ability usage
+### 📣 〢 AI-Controlled Ability usage
 As Gameplay Abilities are also able to be activated by bot-controlled pawns, the ModularGameplayAbility provides further logic modifying the AI's behavior.  
 E.g. during the Ability activation, if instigated by an AI, it will stop any Behavior Logic / AI Movement / RVO Avoidance / ...
 [...]
