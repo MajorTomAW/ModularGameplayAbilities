@@ -4,6 +4,9 @@
 
 Unreal Engine Plugin for extending the GAS in a Lyra-like manner.  
 
+> [!WARNING]
+> This is still in development and some features may not work as expected.
+
 ---
 
 ## 🌐 〢 Index
