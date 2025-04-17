@@ -72,7 +72,7 @@ public:
 
 	/** Returns true if the requested activation group is a valid transition from the current activation group. */
 	UFUNCTION(BlueprintCallable, BlueprintPure = false, Category = Ability, meta = (ExpandBoolAsExecs = "ReturnValue"))
-	bool CanChangeActivationGroup(EGameplayAbilityActivationGroup::Type DesiredGroup);
+	bool CanChangeActivationGroup(EGameplayAbilityActivationGroup::Type DesiredGroup) const;
 
 	/** Attempts to change the activation group of this ability. */
 	UFUNCTION(BlueprintCallable, BlueprintPure = false, Category = Ability, meta = (ExpandBoolAsExecs = "ReturnValue"))

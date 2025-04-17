@@ -35,6 +35,7 @@ UModularGameplayAbility::UModularGameplayAbility(const FObjectInitializer& Objec
 	ActivationPolicy = EGameplayAbilityActivationPolicy::Active;
 	ActivationGroup = EGameplayAbilityActivationGroup::Independent;
 	bActivateIfTagsAlreadyPresent =  false;
+	bForceReceiveInput = false;
 
 	bStartWithCooldown = false;
 	bPersistCooldownOnDeath = true;
@@ -91,7 +92,7 @@ AController* UModularGameplayAbility::GetControllerFromActorInfo() const
 	return nullptr;
 }
 
-bool UModularGameplayAbility::CanChangeActivationGroup(EGameplayAbilityActivationGroup::Type DesiredGroup)
+bool UModularGameplayAbility::CanChangeActivationGroup(EGameplayAbilityActivationGroup::Type DesiredGroup) const
 {
 	if (!IsInstantiated() || !IsActive())
 	{
@@ -209,7 +210,11 @@ PRAGMA_ENABLE_DEPRECATION_WARNINGS
 
 void UModularGameplayAbility::GetOwnedGameplayTags(FGameplayTagContainer& TagContainer) const
 {
+#if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION >= 5
 	TagContainer.AppendTags(GetAssetTags());
+#else
+	TagContainer.AppendTags(AbilityTags);
+#endif
 }
 
 bool UModularGameplayAbility::CanActivateAbility(
@@ -365,7 +370,11 @@ bool UModularGameplayAbility::DoesAbilitySatisfyTagRequirements(
 	const FGameplayTag& MissingTag = AbilitySystemGlobals.ActivateFailTagsMissingTag;
 
 	// CHeck if any of this ability's tags are already blocked
+#if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION >= 5
 	if (AbilitySystemComponent.AreAbilityTagsBlocked(GetAssetTags()))
+#else
+	if (AbilitySystemComponent.AreAbilityTagsBlocked(AbilityTags))
+#endif
 	{
 		bBlocked = true;
 	}
@@ -380,7 +389,7 @@ bool UModularGameplayAbility::DoesAbilitySatisfyTagRequirements(
 	// Expand our ability tags by adding additional required/blocked tags
 	if (ModularAbilitySystem)
 	{
-		ModularAbilitySystem->GetAdditionalActivationTagRequirements(GetAssetTags(), AllRequiredTags, AllBlockedTags);
+		ModularAbilitySystem->GetAdditionalActivationTagRequirements(AbilityTags, AllRequiredTags, AllBlockedTags);
 	}
 
 	// Check to see the required/blocked tags for this ability

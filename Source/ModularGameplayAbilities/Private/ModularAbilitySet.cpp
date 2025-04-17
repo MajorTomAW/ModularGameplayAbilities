@@ -159,7 +159,12 @@ void UModularAbilitySet::GiveToAbilitySystem(
 
 		FGameplayAbilitySpec Spec(CDO, Ability.AbilityLevel);
 		Spec.SourceObject = SourceObject;
+
+#if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION >= 5
 		Spec.GetDynamicSpecSourceTags().AddTag(Ability.InputTag);
+#else
+		Spec.DynamicAbilityTags.AddTag(Ability.InputTag);
+#endif
 
 		const FGameplayAbilitySpecHandle Handle = AbilitySystem->GiveAbility(Spec);
 

@@ -381,7 +381,11 @@ void UModularAbilitySystemComponent::AbilityInputTagPressed(const FGameplayTag& 
 
 	for (const FGameplayAbilitySpec& Spec : ActivatableAbilities.Items)
 	{
+#if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION >= 5
 		if (Spec.Ability && Spec.GetDynamicSpecSourceTags().HasTagExact(InputTag))
+#else
+		if (Spec.Ability && Spec.DynamicAbilityTags.HasTagExact(InputTag))
+#endif
 		{
 			UModularGameplayAbility* CDO = Cast<UModularGameplayAbility>(Spec.Ability);
 			if (CDO == nullptr)
@@ -417,7 +421,11 @@ void UModularAbilitySystemComponent::AbilityInputTagReleased(const FGameplayTag&
 
 	for (const FGameplayAbilitySpec& Spec : ActivatableAbilities.Items)
 	{
+#if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION >= 5
 		if (Spec.Ability && Spec.GetDynamicSpecSourceTags().HasTagExact(InputTag))
+#else
+		if (Spec.Ability && Spec.DynamicAbilityTags.HasTagExact(InputTag))
+#endif
 		{
 			InputHeldHandles.Remove(Spec.Handle);
 			InputReleasedHandles.AddUnique(Spec.Handle);
