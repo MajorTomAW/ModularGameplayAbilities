@@ -63,8 +63,24 @@ public:
 	/** Returns whether this cost should only be applied if this ability hits successfully. */
 	bool ShouldOnlyApplyCostOnHit() const { return bOnlyApplyCostOnHit; }
 
+	/** Serialize operator */
+	virtual bool NetSerialize(FArchive& Ar, UPackageMap* Map, bool& bOutSuccess)
+	{
+		bOutSuccess = true;
+		return true;
+	}
+
 protected:
 	/** If true, this cost should only be applied if this ability hits successfully (such as melee weapon durability) */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Costs)
 	uint8 bOnlyApplyCostOnHit : 1;
+};
+
+template<>
+struct TStructOpsTypeTraits<FModularAbilityCost> : public TStructOpsTypeTraitsBase2<FModularAbilityCost>
+{
+	enum
+	{
+		WithNetSerializer = true,
+	};
 };
