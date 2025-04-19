@@ -521,9 +521,15 @@ void UModularGameplayAbility::ApplyCost(
 	bool bAbilityHitTarget = false;
 	bool bHasDeterminedIfAbilityHitTarget = false;
 
-	for (TInstancedStruct InstancedCost : AbilityCosts)
+	for (int i = 0; i < AbilityCosts.Num(); ++i)
 	{
-		if (const FModularAbilityCost* Cost = InstancedCost.GetPtr<FModularAbilityCost>())
+		if (!ensure(AbilityCosts.IsValidIndex(i)))
+		{
+			continue;
+		}
+
+		const FInstancedStruct& Instanced = AbilityCosts[i];
+		if (const FModularAbilityCost* Cost = Instanced.GetPtr<FModularAbilityCost>())
 		{
 			if (Cost->ShouldOnlyApplyCostOnHit())
 			{
@@ -539,8 +545,8 @@ void UModularGameplayAbility::ApplyCost(
 				}
 			}
 
-			FModularAbilityCost& MutableCost = reinterpret_cast<FModularAbilityCost&>(Cost);
-			MutableCost.ApplyCost(this, Handle, ActorInfo, ActivationInfo);
+			FModularAbilityCost* MutableCost = const_cast<FModularAbilityCost*>(Cost);
+			MutableCost->ApplyCost(this, Handle, ActorInfo, ActivationInfo);
 		}
 	}
 }

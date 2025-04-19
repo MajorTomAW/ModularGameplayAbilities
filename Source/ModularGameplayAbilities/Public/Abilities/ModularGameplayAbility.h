@@ -256,8 +256,9 @@ protected:
 	uint8 bApplyingCostsEnabled : 1;
 
 	/** List of additional costs that must be paid to activate this ability. */
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Costs, NoClear, meta=(ExcludeBaseStruct,ShowOnlyInnerProperties))
-	TArray<TInstancedStruct<FModularAbilityCost>> AbilityCosts;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Costs, NoClear, meta=(ExcludeBaseStruct,ShowOnlyInnerProperties,
+		BaseStruct="/Script/ModularGameplayAbilities.ModularAbilityCost"))
+	TArray<FInstancedStruct> AbilityCosts;
 
 	// ----------------------------------------------------------------------------------------------------------------
 	//	AI

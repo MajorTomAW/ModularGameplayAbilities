@@ -5,16 +5,17 @@
 #include "CoreMinimal.h"
 #include "ModularAbilityCost.h"
 
-#include "ModularAbilityCost_ExplicitAttribute.generated.h"
+#include "ModularAbilityCost_AdditionalGameplayEffect.generated.h"
 
-/** Represents a cost that uses up an explicitly set attribute and value. */
-USTRUCT(DisplayName="Explicit Attribute Cost")
-struct FModularAbilityCost_ExplicitAttribute : public FModularAbilityCost
+class UGameplayEffect;
+/** Represents a cost that provides an additional gameplay effect to be applied to the ability system. */
+USTRUCT(DisplayName="Additional Cost Effect")
+struct FModularAbilityCost_AdditionalGameplayEffect : public FModularAbilityCost
 {
 	GENERATED_BODY()
 
 public:
-	FModularAbilityCost_ExplicitAttribute();
+	FModularAbilityCost_AdditionalGameplayEffect();
 
 	//~ Begin FModularAbilityCost Interface
 	virtual bool CheckCost(const UModularGameplayAbility* Ability, const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, FGameplayTagContainer* OptionalRelevantTags) const override;
@@ -22,16 +23,11 @@ public:
 	//~ End FModularAbilityCost Interface
 
 protected:
-	/** The attribute to use for the cost. */
+	/** The gameplay effect to apply. */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Costs)
-	FGameplayAttribute Attribute;
+	TSubclassOf<UGameplayEffect> AdditionalCostEffect;
 
-	/** How much of the attribute to consume. (keyed on ability level).
-	 * Note that this value will be subtracted from the attribute value, so it should be positive. */
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Costs)
-	FScalableFloat CostValue;
-
-	/** Explicit failure tag to send back as a response in case this cost can't be paid. */
+	/** The failure tag to apply if the cost check fails. */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Costs)
 	FGameplayTag FailureTag;
 };
