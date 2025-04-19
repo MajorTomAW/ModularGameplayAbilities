@@ -97,6 +97,16 @@ public:
 	/** Returns true if this ability should receive input events. */
 	virtual bool ShouldReceiveInputEvents() const;
 
+	/** Called when this ability failed to activate for some reason. */
+	inline void OnAbilityFailedToActivate(const FGameplayTagContainer& FailedReason) const
+	{
+		FGameplayTagContainer OverridenFailedReason;
+		K2_OverrideFailedReason(FailedReason,OverridenFailedReason);
+		
+		NativeOnAbilityFailedToActivate(OverridenFailedReason);
+		ScriptOnAbilityFailedToActivate(OverridenFailedReason);
+	}
+
 protected:
 	//~ Begin UGameplayAbility Interface
 	virtual bool CanActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayTagContainer* SourceTags = nullptr, const FGameplayTagContainer* TargetTags = nullptr, FGameplayTagContainer* OptionalRelevantTags = nullptr) const override;
@@ -127,23 +137,31 @@ protected:
 	/** Called when the ability system is initialized with a pawn avatar. */
 	virtual void OnPawnAvatarSet();
 
-	/** Called when the ability fails to activate. */
+	/** Called when the ability fails to activate for some reason. */
 	virtual void NativeOnAbilityFailedToActivate(const FGameplayTagContainer& FailedReason) const;
+
+	/** Called when the ability fails to activate for some reason. */
+	UFUNCTION(BlueprintImplementableEvent, Category = Ability)
+	void ScriptOnAbilityFailedToActivate(const FGameplayTagContainer& FailedReason) const;
 
 	// ----------------------------------------------------------------------------------------------------------------
 	//	Blueprint Events
 	// ----------------------------------------------------------------------------------------------------------------
 
+	/** Optionally overrides the default ability failure reason for specific cases. */
+	UFUNCTION(BlueprintNativeEvent, Category = Ability, DisplayName = OverrideFailedReason)
+	void K2_OverrideFailedReason(const FGameplayTagContainer& FailedReason, FGameplayTagContainer& OverridenFailedReason) const;
+
 	/** Called when this ability is granted to the ability system component. */
-	UFUNCTION(BlueprintImplementableEvent, Category = Ability, DisplayName = "OnAbilityAdded")
+	UFUNCTION(BlueprintImplementableEvent, Category = Ability, DisplayName = OnAbilityAdded)
 	void K2_OnAbilityAdded();
 
 	/** Called when this ability is removed from the ability system component. */
-	UFUNCTION(BlueprintImplementableEvent, Category = Ability, DisplayName = "OnAbilityRemoved")
+	UFUNCTION(BlueprintImplementableEvent, Category = Ability, DisplayName = OnAbilityRemoved)
 	void K2_OnAbilityRemoved();
 
 	/** Called when the ability system is initialized with a pawn avatar. */
-	UFUNCTION(BlueprintImplementableEvent, Category = Ability, DisplayName = "OnPawnAvatarSet")
+	UFUNCTION(BlueprintImplementableEvent, Category = Ability, DisplayName = OnPawnAvatarSet)
 	void K2_OnPawnAvatarSet();
 
 	/**
@@ -153,12 +171,12 @@ protected:
 	 */
 	
 	/** Called when this ability's input is pressed. */
-	UFUNCTION(BlueprintImplementableEvent, Category = Ability, DisplayName = "OnAbilityInputPressed")
+	UFUNCTION(BlueprintImplementableEvent, Category = Ability, DisplayName = OnAbilityInputPressed)
 	void K2_OnAbilityInputPressed(float TimeWaited);
 	bool bHasBlueprintInputPressed;	// If not implemented, no need to listen or send replicated input events.
 
 	/** Called when this ability's input is released. */
-	UFUNCTION(BlueprintImplementableEvent, Category = Ability, DisplayName = "OnAbilityInputReleased")
+	UFUNCTION(BlueprintImplementableEvent, Category = Ability, DisplayName = OnAbilityInputReleased)
 	void K2_OnAbilityInputReleased(float TimeHeld);
 	bool bHasBlueprintInputReleased; // If not implemented, no need to listen or send replicated input events.
 

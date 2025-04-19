@@ -56,7 +56,7 @@ UModularGameplayAbility::UModularGameplayAbility(const FObjectInitializer& Objec
 	{
 		return Func &&
 			ensure(Func->GetOuter()) &&
-			ensure(Func->GetOuter()->IsA(UBlueprintGeneratedClass::StaticClass()));
+			Func->GetOuter()->IsA(UBlueprintGeneratedClass::StaticClass());
 	};
 
 	// Check for blueprint implementation of these events to save performance
@@ -561,12 +561,12 @@ void UModularGameplayAbility::ApplyCooldown(
 	const int32 AbilityLevel = GetAbilityLevel(Handle, ActorInfo);
 
 	// Check if we have a cooldown effect
-	UGameplayEffect* CooldownEffect = GetCooldownGameplayEffect();
-	if (!IsValid(CooldownEffect))
+	const UGameplayEffect* CooldownEffectCDO = GetCooldownGameplayEffect();
+	if (!IsValid(CooldownEffectCDO))
 	{
 		return;
 	}
-	FGameplayEffectSpecHandle CooldownSpecHandle = MakeOutgoingGameplayEffectSpec(CooldownEffect->GetClass(), AbilityLevel);
+	const FGameplayEffectSpecHandle CooldownSpecHandle = MakeOutgoingGameplayEffectSpec(CooldownEffectCDO->GetClass(), AbilityLevel);
 
 	// Check if we have valid cooldown tags
 	if (HasExplicitCooldownDuration())
@@ -714,17 +714,19 @@ bool UModularGameplayAbility::DoesAbilitySatisfyTagRequirements(
 
 const FGameplayTagContainer* UModularGameplayAbility::GetCooldownTags() const
 {
+	// Gosh, this really isn't thread safe, is it?
+	static FGameplayTagContainer LocalCooldownTags;
 	if (UGameplayEffect* CDGE = GetCooldownGameplayEffect())
 	{
-		return &CDGE->GetGrantedTags();
+		LocalCooldownTags.AppendTags(CDGE->GetGrantedTags());
 	}
 
-	if (ExplicitCooldownDuration.Value > 0.0f)
+	if (ExplicitCooldownDuration.GetValueAtLevel(GetAbilityLevel()) > 0.0f)
 	{
-		return &ExplicitCooldownTags;
+		LocalCooldownTags.AppendTags(ExplicitCooldownTags);
 	}
 
-	return nullptr;
+	return &LocalCooldownTags;
 }
 
 void UModularGameplayAbility::OnPawnAvatarSet()
@@ -734,6 +736,18 @@ void UModularGameplayAbility::OnPawnAvatarSet()
 
 void UModularGameplayAbility::NativeOnAbilityFailedToActivate(const FGameplayTagContainer& FailedReason) const
 {
+	bool bSimpleFailureFound = false;
+	for (const FGameplayTag& Reason : FailedReason)
+	{
+		
+	}
+}
+
+void UModularGameplayAbility::K2_OverrideFailedReason_Implementation(
+	const FGameplayTagContainer& FailedReason,
+	FGameplayTagContainer& OverridenFailedReason) const
+{
+	OverridenFailedReason = FailedReason;
 }
 
 #if WITH_EDITOR

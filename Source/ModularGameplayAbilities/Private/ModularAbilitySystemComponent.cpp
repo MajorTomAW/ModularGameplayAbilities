@@ -190,9 +190,38 @@ void UModularAbilitySystemComponent::NotifyAbilityActivated(
 }
 
 void UModularAbilitySystemComponent::NotifyAbilityFailed(
-	const FGameplayAbilitySpecHandle Handle, UGameplayAbility* Ability, const FGameplayTagContainer& FailureReason)
+	const FGameplayAbilitySpecHandle Handle,
+	UGameplayAbility* Ability,
+	const FGameplayTagContainer& FailureReason)
 {
 	Super::NotifyAbilityFailed(Handle, Ability, FailureReason);
+
+	if (const APawn* Pawn = Cast<APawn>(GetAvatarActor()))
+	{
+		if (!Pawn->IsLocallyControlled() && Ability->IsSupportedForNetworking())
+		{
+			ClientNotifyAbilityFailed(Ability, FailureReason);
+			return;
+		}
+	}
+
+	HandleAbilityFailed(Ability, FailureReason);
+}
+void UModularAbilitySystemComponent::HandleAbilityFailed(
+	const UGameplayAbility* Ability,
+	const FGameplayTagContainer& FailureReason)
+{
+	if (const UModularGameplayAbility* ModularAbility = Cast<UModularGameplayAbility>(Ability))
+	{
+		ModularAbility->OnAbilityFailedToActivate(FailureReason);
+	}
+}
+
+void UModularAbilitySystemComponent::ClientNotifyAbilityFailed_Implementation(
+	const UGameplayAbility* Ability,
+	const FGameplayTagContainer& FailureReason)
+{
+	HandleAbilityFailed(Ability, FailureReason);
 }
 
 void UModularAbilitySystemComponent::NotifyAbilityEnded(

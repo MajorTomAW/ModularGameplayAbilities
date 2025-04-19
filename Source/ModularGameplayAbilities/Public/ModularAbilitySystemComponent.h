@@ -72,6 +72,13 @@ public:
 	/** Looks at ability tags and gathers additional required and blocked tags. */
 	virtual void GetAdditionalActivationTagRequirements(const FGameplayTagContainer& AbilityTags, FGameplayTagContainer& OutActivationRequired, FGameplayTagContainer& OutActivationBlocked) const;
 
+	/** Handles the ability failed to activate. */
+	virtual void HandleAbilityFailed(const UGameplayAbility* Ability, const FGameplayTagContainer& FailureReason);
+
+	/** Notifies the client about the ability failure. */
+	UFUNCTION(Client, Unreliable)
+	void ClientNotifyAbilityFailed(const UGameplayAbility* Ability, const FGameplayTagContainer& FailureReason);
+
 public:
 	//~ Begin UAbilitySystemComponent Interface
 	virtual void AbilitySpecInputPressed(FGameplayAbilitySpec& Spec) override;
