@@ -3,9 +3,11 @@
 
 #include "Abilities/ModularGameplayAbility.h"
 
+#include "AbilitySystemBlueprintLibrary.h"
 #include "AbilitySystemGlobals.h"
 #include "AbilitySystemLog.h"
 #include "ModularAbilitySystemComponent.h"
+#include "Abilities/Costs/ModularAbilityCost.h"
 #include "GameFramework/PlayerState.h"
 #include "Misc/DataValidation.h"
 
@@ -36,6 +38,7 @@ UModularGameplayAbility::UModularGameplayAbility(const FObjectInitializer& Objec
 	ActivationGroup = EGameplayAbilityActivationGroup::Independent;
 	bActivateIfTagsAlreadyPresent =  false;
 	bForceReceiveInput = false;
+	LastInputCallbackTime = 0.0f;
 
 	bStartWithCooldown = false;
 	bPersistCooldownOnDeath = true;
@@ -46,6 +49,25 @@ UModularGameplayAbility::UModularGameplayAbility(const FObjectInitializer& Objec
 	bStopsAIBehaviorLogic = false;
 	bStopsAIMovement = false;
 	bStopsAIRVOAvoidance = false;
+	ActivationNoiseRange = 1000.f;
+	ActivationNoiseLoudness = 1.0f;
+
+	auto ImplementedInBlueprint = [] (const UFunction* Func) -> bool
+	{
+		return Func &&
+			ensure(Func->GetOuter()) &&
+			ensure(Func->GetOuter()->IsA(UBlueprintGeneratedClass::StaticClass()));
+	};
+
+	// Check for blueprint implementation of these events to save performance
+	{ // Input pressed
+		const UFunction* Func = GetClass()->FindFunctionByName(GET_FUNCTION_NAME_CHECKED(ThisClass, K2_OnAbilityInputPressed));
+		bHasBlueprintInputPressed = ImplementedInBlueprint(Func);
+	}
+	{ // Input released
+		const UFunction* Func = GetClass()->FindFunctionByName(GET_FUNCTION_NAME_CHECKED(ThisClass, K2_OnAbilityInputReleased));
+		bHasBlueprintInputReleased = ImplementedInBlueprint(Func);
+	}
 }
 
 AController* UModularGameplayAbility::GetControllerFromActorInfo() const
@@ -149,9 +171,11 @@ bool UModularGameplayAbility::ChangeActivationGroup(EGameplayAbilityActivationGr
 
 void UModularGameplayAbility::TryActivateAbilityOnSpawn(const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilitySpec& Spec) const
 {
-PRAGMA_DISABLE_DEPRECATION_WARNINGS
+#if ENGINE_VERSION_OLDER_5_4
+	const bool bIsPredicting = (GetCurrentActivationInfo().ActivationMode == EGameplayAbilityActivationMode::Predicting);
+#else
 	const bool bIsPredicting = (Spec.ActivationInfo.ActivationMode == EGameplayAbilityActivationMode::Predicting);
-PRAGMA_ENABLE_DEPRECATION_WARNINGS
+#endif
 
 	UAbilitySystemComponent* ASC = ActorInfo->AbilitySystemComponent.Get();
 
@@ -215,6 +239,16 @@ void UModularGameplayAbility::GetOwnedGameplayTags(FGameplayTagContainer& TagCon
 #else
 	TagContainer.AppendTags(AbilityTags);
 #endif
+}
+
+bool UModularGameplayAbility::ShouldReceiveInputEvents() const
+{
+	if (ActivationPolicy == EGameplayAbilityActivationPolicy::Active)
+	{
+		return true;
+	}
+
+	return bForceReceiveInput;
 }
 
 bool UModularGameplayAbility::CanActivateAbility(
@@ -284,24 +318,169 @@ void UModularGameplayAbility::ActivateAbility(const FGameplayAbilitySpecHandle H
 	const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo,
 	const FGameplayEventData* TriggerEventData)
 {
+	UAbilitySystemComponent* AbilitySystem = ActorInfo->AbilitySystemComponent.Get();
+	if (ensure(AbilitySystem) &&
+		ShouldReceiveInputEvents() &&
+		(bHasBlueprintInputPressed || bHasBlueprintInputReleased))
+	{
+		// Cache the starting time of this ability's activation
+		LastInputCallbackTime = GetWorld()->GetTimeSeconds();
+		
+		// For locally controlled players, immediately check for the input pressed flag
+		if (IsLocallyControlled())
+		{
+			const FGameplayAbilitySpec* Spec = GetCurrentAbilitySpec();
+			if (Spec && Spec->InputPressed)
+			{
+				OnInputChangedCallback(true);
+				return;
+			}
+		}
+
+		// Assign to the input pressed delegate
+		if (bHasBlueprintInputPressed)
+		{
+			AbilitySystem->AbilityReplicatedEventDelegate(
+				EAbilityGenericReplicatedEvent::InputPressed,
+				Handle,
+				ActivationInfo.GetActivationPredictionKey())
+			.AddUObject(this, &ThisClass::OnInputChangedCallback, true);	
+		}
+
+		// Assign to the input released delegate
+		if (bHasBlueprintInputReleased)
+		{
+			AbilitySystem->AbilityReplicatedEventDelegate(
+				EAbilityGenericReplicatedEvent::InputReleased,
+				Handle,
+				ActivationInfo.GetActivationPredictionKey())
+			.AddUObject(this, &ThisClass::OnInputChangedCallback, false);
+		}
+
+		if (IsForRemoteClient())
+		{
+			if (!AbilitySystem->CallReplicatedEventDelegateIfSet(
+				EAbilityGenericReplicatedEvent::InputPressed,
+				Handle,
+				ActivationInfo.GetActivationPredictionKey()))
+			{
+				//@TODO: Await remote player data?
+			}
+		}
+	}
+	
 	Super::ActivateAbility(Handle, ActorInfo, ActivationInfo, TriggerEventData);
 }
-
-void UModularGameplayAbility::EndAbility(const FGameplayAbilitySpecHandle Handle,
-	const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo,
-	bool bReplicateEndAbility, bool bWasCancelled)
+void UModularGameplayAbility::OnInputChangedCallback(bool bIsPressed)
 {
+	// This shouldn't be false at this point, but just in case
+	if (!ShouldReceiveInputEvents())
+	{
+		return;
+	}
+
+	// Determine the duration between the last input callback and this one
+	const float ElapsedTime = GetWorld()->GetTimeSeconds() - LastInputCallbackTime;
+	
+	UAbilitySystemComponent* AbilitySystem = GetAbilitySystemComponentFromActorInfo();
+	if (!AbilitySystem || !IsValid(this))
+	{
+		return;
+	}
+
+	const EAbilityGenericReplicatedEvent::Type EventType =
+		bIsPressed
+		? EAbilityGenericReplicatedEvent::InputPressed
+		: EAbilityGenericReplicatedEvent::InputReleased;
+
+	FScopedPredictionWindow PredictionWindow(AbilitySystem, IsPredictingClient());
+	if (IsPredictingClient() &&
+		(bIsPressed ? bHasBlueprintInputPressed : bHasBlueprintInputReleased))
+	{
+		// Notify the server about this callback
+		AbilitySystem->ServerSetReplicatedEvent(
+			EventType,
+			GetCurrentAbilitySpecHandle(),
+			GetCurrentActivationInfo().GetActivationPredictionKey(),
+			AbilitySystem->ScopedPredictionKey);
+	}
+	else if (bIsPressed ? bHasBlueprintInputPressed : bHasBlueprintInputReleased)
+	{
+		// Otherwise consume the event
+		AbilitySystem->ConsumeGenericReplicatedEvent(
+			EventType,
+			GetCurrentAbilitySpecHandle(),
+			GetCurrentActivationInfo().GetActivationPredictionKey());
+	}
+
+	// We're done now. Inform the blueprint about the input event
+	if (bIsPressed && bHasBlueprintInputPressed)
+	{
+		K2_OnAbilityInputPressed(ElapsedTime);
+	}
+	else if (bHasBlueprintInputReleased)
+	{
+		K2_OnAbilityInputReleased(ElapsedTime);
+	}
+}
+
+void UModularGameplayAbility::EndAbility(
+	const FGameplayAbilitySpecHandle Handle,
+	const FGameplayAbilityActorInfo* ActorInfo,
+	const FGameplayAbilityActivationInfo ActivationInfo,
+	bool bReplicateEndAbility,
+	bool bWasCancelled)
+{
+	// When this ability was ended, make sure we have no pending delegates still assigned to the ASC
+	if (UAbilitySystemComponent* AbilitySystem = GetAbilitySystemComponentFromActorInfo())
+	{
+		// Remove pressed delegate
+		AbilitySystem->AbilityReplicatedEventDelegate(
+			EAbilityGenericReplicatedEvent::InputPressed,
+			Handle,
+			ActivationInfo.GetActivationPredictionKey())
+		.RemoveAll(this);
+
+		// Remove released delegate
+		AbilitySystem->AbilityReplicatedEventDelegate(
+			EAbilityGenericReplicatedEvent::InputReleased,
+			Handle,
+			ActivationInfo.GetActivationPredictionKey())
+		.RemoveAll(this);
+	}
+	
 	Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);
 }
 
-bool UModularGameplayAbility::CheckCost(const FGameplayAbilitySpecHandle Handle,
-	const FGameplayAbilityActorInfo* ActorInfo, FGameplayTagContainer* OptionalRelevantTags) const
+bool UModularGameplayAbility::CheckCost(
+	const FGameplayAbilitySpecHandle Handle,
+	const FGameplayAbilityActorInfo* ActorInfo,
+	FGameplayTagContainer* OptionalRelevantTags) const
 {
-	return Super::CheckCost(Handle, ActorInfo, OptionalRelevantTags);
+	if (!Super::CheckCost(Handle, ActorInfo, OptionalRelevantTags))
+	{
+		return false;
+	}
+
+	// Check for additional costs
+	for (const auto& InstancedCost : AbilityCosts)
+	{
+		if (const FModularAbilityCost* Cost = InstancedCost.GetPtr<FModularAbilityCost>())
+		{
+			if (!Cost->CheckCost(this, Handle, ActorInfo, OptionalRelevantTags))
+			{
+				return false;
+			}
+		}
+	}
+
+	return true;
 }
 
-void UModularGameplayAbility::ApplyCost(const FGameplayAbilitySpecHandle Handle,
-	const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo) const
+void UModularGameplayAbility::ApplyCost(
+	const FGameplayAbilitySpecHandle Handle,
+	const FGameplayAbilityActorInfo* ActorInfo,
+	const FGameplayAbilityActivationInfo ActivationInfo) const
 {
 	if (!bApplyingCostsEnabled)
 	{
@@ -309,6 +488,61 @@ void UModularGameplayAbility::ApplyCost(const FGameplayAbilitySpecHandle Handle,
 	}
 	
 	Super::ApplyCost(Handle, ActorInfo, ActivationInfo);
+
+	check(ActorInfo);
+
+	// Used to determine if the ability actually hit a target
+	// (as some costs are only spent on successful attempts)
+	auto DetermineIfAbilityHitTarget = [&] () ->bool
+	{
+		if (!ActorInfo->IsNetAuthority())
+		{
+			return false;
+		}
+
+		if (UModularAbilitySystemComponent* ModularAbilitySystem = Cast<UModularAbilitySystemComponent>(ActorInfo->AbilitySystemComponent.Get()))
+		{
+			FGameplayAbilityTargetDataHandle TargetData;
+			ModularAbilitySystem->GetAbilityTargetData(Handle, ActivationInfo, TargetData);
+
+			for (int32 TargetDataIdx = 0; TargetDataIdx < TargetData.Data.Num(); ++TargetDataIdx)
+			{
+				if (UAbilitySystemBlueprintLibrary::TargetDataHasHitResult(TargetData, TargetDataIdx))
+				{
+					return true;
+				}
+			}
+		}
+
+		return false;
+	};
+
+	// Apply any additional ability costs
+	bool bAbilityHitTarget = false;
+	bool bHasDeterminedIfAbilityHitTarget = false;
+
+	for (const auto& InstancedCost : AbilityCosts)
+	{
+		if (const FModularAbilityCost* Cost = InstancedCost.GetPtr<FModularAbilityCost>())
+		{
+			if (Cost->ShouldOnlyApplyCostOnHit())
+			{
+				if (!bHasDeterminedIfAbilityHitTarget)
+				{
+					bAbilityHitTarget = DetermineIfAbilityHitTarget();
+					bHasDeterminedIfAbilityHitTarget = true;
+				}
+
+				if (!bAbilityHitTarget)
+				{
+					continue;
+				}
+			}
+
+			FModularAbilityCost& MutableCost = reinterpret_cast<FModularAbilityCost&>(Cost);
+			MutableCost.ApplyCost(this, Handle, ActorInfo, ActivationInfo);
+		}
+	}
 }
 
 bool UModularGameplayAbility::CheckCooldown(
@@ -350,7 +584,8 @@ void UModularGameplayAbility::ApplyCooldown(
 	}
 
 	// Apply cooldown
-	ApplyGameplayEffectSpecToOwner(Handle, ActorInfo, ActivationInfo, CooldownSpecHandle);
+	FActiveGameplayEffectHandle CooldownHandle =
+		ApplyGameplayEffectSpecToOwner(Handle, ActorInfo, ActivationInfo, CooldownSpecHandle);
 
 	// Let others know we applied a cooldown
 	OnApplyCooldownDelegate.Broadcast(this, ExplicitCooldownDuration.GetValueAtLevel(AbilityLevel), ExplicitCooldownTags);
@@ -389,7 +624,11 @@ bool UModularGameplayAbility::DoesAbilitySatisfyTagRequirements(
 	// Expand our ability tags by adding additional required/blocked tags
 	if (ModularAbilitySystem)
 	{
+#if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION >= 5
+		ModularAbilitySystem->GetAdditionalActivationTagRequirements(GetAssetTags(), AllRequiredTags, AllBlockedTags);
+#else
 		ModularAbilitySystem->GetAdditionalActivationTagRequirements(AbilityTags, AllRequiredTags, AllBlockedTags);
+#endif
 	}
 
 	// Check to see the required/blocked tags for this ability
@@ -501,12 +740,13 @@ void UModularGameplayAbility::NativeOnAbilityFailedToActivate(const FGameplayTag
 EDataValidationResult UModularGameplayAbility::IsDataValid(class FDataValidationContext& Context) const
 {
 	EDataValidationResult Result = Super::IsDataValid(Context);
-
+PRAGMA_DISABLE_DEPRECATION_WARNINGS
 	if (GetInstancingPolicy() == EGameplayAbilityInstancingPolicy::NonInstanced)
 	{
 		Result = EDataValidationResult::Invalid;
 		Context.AddError(NSLOCTEXT("ModularGameplayAbilities", "NonInstancedAbilityError", "NonInstanced abilities are deprecated. Use InstancedPerActor instead."));
 	}
+PRAGMA_ENABLE_DEPRECATION_WARNINGS	
 
 	return Result;
 }

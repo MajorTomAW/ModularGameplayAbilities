@@ -5,8 +5,10 @@
 #include "CoreMinimal.h"
 #include "ModularGameplayAbilityTypes.h"
 #include "Abilities/GameplayAbility.h"
+#include "StructUtils/InstancedStruct.h"
 #include "ModularGameplayAbility.generated.h"
 
+struct FModularAbilityCost;
 /**
  * Extended version of the UGameplayAbility
  * Adds more functionality and customization options in the context of activation, failure, etc.
@@ -92,6 +94,9 @@ public:
 	UPROPERTY(BlueprintAssignable)
 	FOnApplyCooldownDelegate OnApplyCooldownDelegate;
 
+	/** Returns true if this ability should receive input events. */
+	virtual bool ShouldReceiveInputEvents() const;
+
 protected:
 	//~ Begin UGameplayAbility Interface
 	virtual bool CanActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayTagContainer* SourceTags = nullptr, const FGameplayTagContainer* TargetTags = nullptr, FGameplayTagContainer* OptionalRelevantTags = nullptr) const override;
@@ -125,6 +130,10 @@ protected:
 	/** Called when the ability fails to activate. */
 	virtual void NativeOnAbilityFailedToActivate(const FGameplayTagContainer& FailedReason) const;
 
+	// ----------------------------------------------------------------------------------------------------------------
+	//	Blueprint Events
+	// ----------------------------------------------------------------------------------------------------------------
+
 	/** Called when this ability is granted to the ability system component. */
 	UFUNCTION(BlueprintImplementableEvent, Category = Ability, DisplayName = "OnAbilityAdded")
 	void K2_OnAbilityAdded();
@@ -136,6 +145,32 @@ protected:
 	/** Called when the ability system is initialized with a pawn avatar. */
 	UFUNCTION(BlueprintImplementableEvent, Category = Ability, DisplayName = "OnPawnAvatarSet")
 	void K2_OnPawnAvatarSet();
+
+	/**
+	 * Input-related events.
+	 * These will only be called if this ability is set to receive input events,
+	 * which can either be set by the ActivationPolicy or by setting bForceReceiveInput to true.
+	 */
+	
+	/** Called when this ability's input is pressed. */
+	UFUNCTION(BlueprintImplementableEvent, Category = Ability, DisplayName = "OnAbilityInputPressed")
+	void K2_OnAbilityInputPressed(float TimeWaited);
+	bool bHasBlueprintInputPressed;	// If not implemented, no need to listen or send replicated input events.
+
+	/** Called when this ability's input is released. */
+	UFUNCTION(BlueprintImplementableEvent, Category = Ability, DisplayName = "OnAbilityInputReleased")
+	void K2_OnAbilityInputReleased(float TimeHeld);
+	bool bHasBlueprintInputReleased; // If not implemented, no need to listen or send replicated input events.
+
+	/** Callback function for when the input is pressed or released. */
+	UFUNCTION()
+	void OnInputChangedCallback(bool bIsPressed);
+
+	/**
+	 * Last time the input state of this ability was changed.
+	 * Can be used to determine how long the input was pressed or released.
+	 */
+	float LastInputCallbackTime;
 
 protected:
 	// ----------------------------------------------------------------------------------------------------------------
@@ -157,6 +192,18 @@ protected:
 	/** If true, the ability will be activated automatically when activation required tags are already present. */
 	UPROPERTY(EditDefaultsOnly, Category = Activation, meta = (DisplayName = "Activate if Tags Already Present"))
 	uint8 bActivateIfTagsAlreadyPresent : 1;
+
+	// ----------------------------------------------------------------------------------------------------------------
+	//	Display
+	// ----------------------------------------------------------------------------------------------------------------
+
+	/** Display name text of this ability to show in the HUD. */
+	UPROPERTY(EditDefaultsOnly, Category = Display)
+	FText DisplayName = FText::GetEmpty();
+
+	/** Optional description text of this ability to explain what it does. */
+	UPROPERTY(EditDefaultsOnly, Category = Display, meta=(MultiLine))
+	FText Description = FText::GetEmpty();
 
 	// ----------------------------------------------------------------------------------------------------------------
 	//	Cooldowns
@@ -190,6 +237,10 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Costs)
 	uint8 bApplyingCostsEnabled : 1;
 
+	/** List of additional costs that must be paid to activate this ability. */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Costs, NoClear, meta=(ExcludeBaseStruct,ShowOnlyInnerProperties))
+	TArray<TInstancedStruct<FModularAbilityCost>> AbilityCosts;
+
 	// ----------------------------------------------------------------------------------------------------------------
 	//	AI
 	// ----------------------------------------------------------------------------------------------------------------
@@ -205,4 +256,12 @@ protected:
 	/** If true, when AI activates the ability, it will stop the RVO Avoidance until the ability is finished/aborted. */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = AI, meta = (DisplayName = "Stops AI RVO Avoidance"))
 	uint8 bStopsAIRVOAvoidance : 1;
+
+	/** The range of the noise event that will be sent when the ability is activated. */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = AI, meta = (Units=cm))
+	float ActivationNoiseRange;
+
+	/** The loudness of the noise event that will be sent when the ability is activated. */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = AI)
+	float ActivationNoiseLoudness;
 };
