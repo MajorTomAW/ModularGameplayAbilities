@@ -521,7 +521,7 @@ void UModularGameplayAbility::ApplyCost(
 	bool bAbilityHitTarget = false;
 	bool bHasDeterminedIfAbilityHitTarget = false;
 
-	for (const auto& InstancedCost : AbilityCosts)
+	for (TInstancedStruct InstancedCost : AbilityCosts)
 	{
 		if (const FModularAbilityCost* Cost = InstancedCost.GetPtr<FModularAbilityCost>())
 		{
