@@ -47,6 +47,9 @@ public:
 	/** Tries to activate all passive abilities on spawn. */
 	void TryActivateAbilitiesOnSpawn();
 
+	/** Gets the ability target data associated with the given ability handle and activation info. */
+	virtual void GetAbilityTargetData(const FGameplayAbilitySpecHandle AbilityHandle, const FGameplayAbilityActivationInfo& ActivationInfo, FGameplayAbilityTargetDataHandle& OutTargetDataHandle);
+
 	// ----------------------------------------------------------------------------------------------------------------
 	//	Activation Groups
 	// ----------------------------------------------------------------------------------------------------------------

@@ -308,6 +308,20 @@ PRAGMA_ENABLE_DEPRECATION_WARNINGS
 	}
 }
 
+void UModularAbilitySystemComponent::GetAbilityTargetData(
+	const FGameplayAbilitySpecHandle AbilityHandle,
+	const FGameplayAbilityActivationInfo& ActivationInfo,
+	FGameplayAbilityTargetDataHandle& OutTargetDataHandle)
+{
+	TSharedPtr<FAbilityReplicatedDataCache> ReplicatedDataCache =
+		AbilityTargetDataMap.Find(FGameplayAbilitySpecHandleAndPredictionKey(AbilityHandle, ActivationInfo.GetActivationPredictionKey()));
+
+	if (ReplicatedDataCache.IsValid())
+	{
+		OutTargetDataHandle = ReplicatedDataCache->TargetData;
+	}
+}
+
 void UModularAbilitySystemComponent::CancelAbilitiesByFunc(
 	TShouldCancelAbilityFunc ShouldCancelFunc, bool bReplicateCancelAbility)
 {
