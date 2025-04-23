@@ -78,6 +78,8 @@ Thus setting up an example of how to lazy-load the Ability System and manage pen
 
 ![image](https://github.com/user-attachments/assets/2557c7a8-4154-44ea-816b-87c760f965f5)  
 
+[Credit (Vorixo)](https://vorixo.github.io/devtricks/lazy-loading-asc/)
+
 ---
 
 <p align="center">
