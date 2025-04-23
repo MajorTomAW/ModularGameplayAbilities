@@ -13,6 +13,9 @@ AGameplayAbilityTargetActor_CursorTrace::AGameplayAbilityTargetActor_CursorTrace
 {
 	// The server can't do this as it doesn't know about the players cursor
 	ShouldProduceTargetDataOnServer = false;
+	bInheritRotation = true;
+	CursorTraceType = TraceTypeQuery1;
+	MaxRange = 10000.f;
 }
 
 void AGameplayAbilityTargetActor_CursorTrace::AimWithCursor(
@@ -31,7 +34,10 @@ void AGameplayAbilityTargetActor_CursorTrace::AimWithCursor(
 
 	FVector Direction;
 	FHitResult CursorHit;
-	bool bSuccess = PC->GetHitResultUnderCursor(ECC_Camera, false, CursorHit);
+	bool bSuccess =
+		bShouldUseCursorHitResult
+		? PC->GetHitResultUnderCursorByChannel(CursorTraceType, false, CursorHit)
+		: false;
 
 	if (bSuccess && CursorHit.bBlockingHit)
 	{
@@ -54,5 +60,33 @@ void AGameplayAbilityTargetActor_CursorTrace::AimWithCursor(
 	if (bSuccess)
 	{
 		TraceEnd = TraceStart + (Direction * MaxRange);
+	}
+}
+
+void AGameplayAbilityTargetActor_CursorTrace::Tick(float DeltaSeconds)
+{
+	// Let's override the parent tick function to implement our own custom logic
+	if (SourceActor && SourceActor->GetLocalRole() != ROLE_SimulatedProxy)
+	{
+		FHitResult HitResult = PerformTrace(SourceActor);
+		FVector EndPoint = HitResult.Component.IsValid() ? HitResult.ImpactPoint : HitResult.TraceEnd;
+
+#if ENABLE_DRAW_DEBUG
+		if (bDebug)
+		{
+			DrawDebugLine(GetWorld(), SourceActor->GetActorLocation(), EndPoint, FColor::Green, false);
+			DrawDebugSphere(GetWorld(), EndPoint, 16, 10, FColor::Red, false);
+		}
+#endif
+
+		// Whether we want to inherit the rotation we need to set the actor rotation
+		if (bInheritRotation)
+		{
+			SetActorLocationAndRotation(EndPoint, SourceActor->GetActorRotation());
+		}
+		else
+		{
+			SetActorLocation(EndPoint);
+		}
 	}
 }

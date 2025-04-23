@@ -69,9 +69,8 @@ FHitResult AGameplayAbilityTargetActor_SingleCursorTrace::PerformTrace(AActor* I
 #if ENABLE_DRAW_DEBUG
 	if (bDebug)
 	{
-		DrawDebugLine(GetWorld(), TraceStart, TraceEnd, FColor::Blue);
-		DrawDebugSphere(GetWorld(), TraceStart, 100.0f, 16, FColor::Blue);
-		DrawDebugSphere(GetWorld(), TraceEnd, 100.0f, 16, FColor::Red);
+		DrawDebugLine(GetWorld(), TraceStart, TraceEnd, FColor::Blue, false);
+		DrawDebugSphere(GetWorld(), TraceEnd, 250.0f, 16, FColor::Red);
 	}
 #endif
 
