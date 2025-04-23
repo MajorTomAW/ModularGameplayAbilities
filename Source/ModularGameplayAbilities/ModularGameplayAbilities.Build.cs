@@ -12,9 +12,9 @@ public class ModularGameplayAbilities : ModuleRules
 			"GameFeatures",
 			"GameplayAbilities",
 			"GameplayTasks",
-			"GameplayTags",
+			"GameplayTags", 
+			"StructUtils",
 		});
-			
 		
 		PrivateDependencyModuleNames.AddRange(new[]
 		{ 

@@ -5,7 +5,13 @@
 #include "CoreMinimal.h"
 #include "ModularGameplayAbilityTypes.h"
 #include "Abilities/GameplayAbility.h"
+
+#if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION >= 5
 #include "StructUtils/InstancedStruct.h"
+#else
+#include "InstancedStruct.h"
+#endif
+
 #include "ModularGameplayAbility.generated.h"
 
 struct FModularAbilityCost;
