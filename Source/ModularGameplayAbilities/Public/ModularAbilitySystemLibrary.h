@@ -23,5 +23,5 @@ public:
 		float ForwardDistance,
 		float HorizontalAdjustment,
 		float VerticalAdjustment,
-		OUT FVector& ForwardVector);
+		FVector& ForwardVector);
 };
