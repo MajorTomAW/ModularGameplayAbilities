@@ -327,7 +327,8 @@ void UModularGameplayAbility::ActivateAbility(const FGameplayAbilitySpecHandle H
 		LastInputCallbackTime = GetWorld()->GetTimeSeconds();
 		
 		// For locally controlled players, immediately check for the input pressed flag
-		if (IsLocallyControlled())
+		constexpr bool bShouldCheckImmediately = false;
+		if (IsLocallyControlled() && bShouldCheckImmediately)
 		{
 			const FGameplayAbilitySpec* Spec = GetCurrentAbilitySpec();
 			if (Spec && Spec->InputPressed)
@@ -394,8 +395,7 @@ void UModularGameplayAbility::OnInputChangedCallback(bool bIsPressed)
 		: EAbilityGenericReplicatedEvent::InputReleased;
 
 	FScopedPredictionWindow PredictionWindow(AbilitySystem, IsPredictingClient());
-	if (IsPredictingClient() &&
-		(bIsPressed ? bHasBlueprintInputPressed : bHasBlueprintInputReleased))
+	if (IsPredictingClient())
 	{
 		// Notify the server about this callback
 		AbilitySystem->ServerSetReplicatedEvent(
@@ -404,7 +404,7 @@ void UModularGameplayAbility::OnInputChangedCallback(bool bIsPressed)
 			GetCurrentActivationInfo().GetActivationPredictionKey(),
 			AbilitySystem->ScopedPredictionKey);
 	}
-	else if (bIsPressed ? bHasBlueprintInputPressed : bHasBlueprintInputReleased)
+	else
 	{
 		// Otherwise consume the event
 		AbilitySystem->ConsumeGenericReplicatedEvent(
