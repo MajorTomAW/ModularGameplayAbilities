@@ -17,14 +17,12 @@ class MODULARGAMEPLAYABILITIES_API UAbilityTask_TakePlayerSnapshot : public UAbi
 	GENERATED_BODY()
 
 public:
-	UAbilityTask_TakePlayerSnapshot(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
-
 	/** Manually call this if you want to restore the snapshot. */
 	UFUNCTION(BlueprintCallable, Category = "Ability|Tasks")
 	virtual void RestoreSnapshot();
 
-	UFUNCTION(Blueprintable, Category="Ability|Tasks", meta=(HidePin=OwningAbility,DefaultToSelf=OwningAbility,BlueprintInternalUseOnly="true"), DisplayName="Take Player Snapshot")
-	static UAbilityTask_TakePlayerSnapshot* TakePlayerSnapshot(UGameplayAbility* OwningAbility, const FGameplayTagQuery& AbilityQuery, bool bCacheAttributes = true, bool bAutoRestoreWhenEndedOrCanceled = true);
+	UFUNCTION(BlueprintCallable, Category = "Ability|Tasks", meta = (HidePin = "OwningAbility", DefaultToSelf = "OwningAbility", BlueprintInternalUseOnly = "true"))
+	static UAbilityTask_TakePlayerSnapshot* TakePlayerSnapshot(UGameplayAbility* OwningAbility, FGameplayTagQuery AbilityQuery, bool bClearCachedAbilities, bool bCacheAttributes = true, bool bAutoRestoreWhenEndedOrCanceled = true);
 
 	/** Invoked if the player snapshot was restored. */
 	UPROPERTY(BlueprintAssignable)
@@ -36,19 +34,21 @@ protected:
 	virtual void ExternalCancel() override;
 	virtual void OnDestroy(bool bInOwnerFinished) override;
 	//~ End UGameplayTask Interface
+
+	virtual void ClearExistingAbilities();
 	
 private:
-	bool bShouldCacheAbilities;		// Should we cache the player's abilities?
-	bool bShouldCacheAttributes;	// Should we cache the player's attributes?
+	bool bShouldClearCachedAbilities = true;	// Should we clear the cached abilities?
+	bool bShouldCacheAttributes = true;	// Should we cache the player's attributes?
 	
 	FGameplayTagQuery AbilityQueryToRun;
 
 	/** If true, will automatically restore the snapshot when the ability ends or is canceled. */
-	bool bAutoRestoreOnEndOrCancel;
+	bool bAutoRestoreOnEndOrCancel = true;
 
 	UPROPERTY(Transient)
 	TMap<TFieldPath<FProperty>, FGameplayAttributeData> CachedAttributes;
 
 	UPROPERTY(Transient)
-	TSet<TSoftClassPtr<UGameplayAbility>> CachedAbilities;
+	TMap<TObjectPtr<UClass>, FGameplayTagContainer> CachedAbilities;
 };
