@@ -612,7 +612,9 @@ void UModularAbilitySystemComponent::ProcessAbilityInput(float DeltaTime, bool b
 	// Try to activate abilities
 	for (const auto& Handle : HandlesToActivate)
 	{
-		TryActivateAbility(Handle);
+		bool bDidActivate = TryActivateAbility(Handle);
+
+		ABILITY_LOG(Display, TEXT("TryActivateAbility %s: %s"), *Handle.ToString(), bDidActivate ? TEXT("Success") : TEXT("Failed"));
 	}
 
 	// Process input for abilities that are released
