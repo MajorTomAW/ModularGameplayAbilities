@@ -36,6 +36,22 @@ public:
 	FGameplayTag InputTag;
 };
 
+/** Data struct that can be used to enable input for a gameplay ability. */
+USTRUCT(BlueprintType)
+struct FAbilityActivatedByInputData
+{
+	GENERATED_BODY()
+
+public:
+	/** The gameplay ability class that is meant to receive input. */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Gameplay Ability")
+	TSoftClassPtr<UGameplayAbility> AbilityClass = nullptr;
+
+	/** The tag query to determine if the ability should be activated. */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Gameplay Ability")
+	FGameplayTagQuery ActivationTagQuery;
+};
+
 /**
  * Data used by the ability set to grant gameplay effects.
  */
@@ -54,9 +70,7 @@ public:
 	int32 EffectLevel = 1;
 };
 
-/**
- * Data used by the ability set to grant attributes.
- */
+/** Data used by the ability set to grant attributes. */
 USTRUCT(BlueprintType)
 struct FModularAbilitySet_AttributeSet
 {
@@ -152,9 +166,17 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Abilities", meta = (TitleProperty=AbilityClass))
 	TArray<FModularAbilitySet_GameplayAbility> Abilities;
 
+	/** Abilities to grant when this set is given. */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = AbilitySystem)
+	TArray<TSoftClassPtr<UGameplayAbility>> GameplayAbilities;
+
 	/** Effects to grant when this set is given. */
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Effects", meta = (TitleProperty=EffectClass))
-	TArray<FModularAbilitySet_GameplayEffect> Effects;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = AbilitySystem, meta = (TitleProperty=EffectClass))
+	TArray<FModularAbilitySet_GameplayEffect> GameplayEffects;
+
+	/** List of gameplay abilities that are meant to be activated by input. */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Input)
+	TArray<FAbilityActivatedByInputData> InputActivatedAbilities;
 
 	/** Attribute sets to grant when this set is given. */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Attributes", meta = (TitleProperty=AttributeSetClass))

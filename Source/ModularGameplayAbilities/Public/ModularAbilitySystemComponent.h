@@ -79,6 +79,14 @@ public:
 	UFUNCTION(Client, Unreliable)
 	void ClientNotifyAbilityFailed(const UGameplayAbility* Ability, const FGameplayTagContainer& FailureReason);
 
+	/** Returns all tracked actors for a specified ability. */
+	UFUNCTION(BlueprintCallable, Category = Tracking)
+	FGameplayAbilitySpecHandle GetTrackedActorsForAbility(const UGameplayAbility* Ability, TArray<FAbilityTrackedActorEntry>& OutTrackedActors) const;
+
+	/** Returns all tracked actors for a specified tag. */
+	UFUNCTION(BlueprintCallable, Category = Tracking)
+	void GetTrackedActorsForTag(const FGameplayTag& Tag, TArray<FAbilityTrackedActorEntry>& OutTrackedActors) const;
+
 public:
 	//~ Begin UAbilitySystemComponent Interface
 	virtual void AbilitySpecInputPressed(FGameplayAbilitySpec& Spec) override;
@@ -104,4 +112,11 @@ protected:
 	
 	/** Cached number of abilities running in each activation group. */
 	int32 ActivationGroupCounts[static_cast<uint8>(EGameplayAbilityActivationGroup::MAX)];
+
+public:
+	/** Currently tracked actors for each tag. */
+	TMap<FGameplayTag, TArray<FAbilityTrackedActorEntry>> TagTrackedActors;
+
+	/** Currently tracked actors for each ability spec. */
+	TMap<FGameplayAbilitySpecHandle, TArray<FAbilityTrackedActorEntry>> AbilitySpecTrackedActors;
 };

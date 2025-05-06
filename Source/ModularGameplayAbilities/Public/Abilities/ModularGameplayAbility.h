@@ -14,6 +14,7 @@
 
 #include "ModularGameplayAbility.generated.h"
 
+class AAIController;
 struct FModularAbilityCost;
 /**
  * Extended version of the UGameplayAbility
@@ -43,6 +44,10 @@ public:
 	/** Returns the controller executing this ability. May be null. */
 	UFUNCTION(BlueprintCallable, Category = Ability)
 	AController* GetControllerFromActorInfo() const;
+
+	/** Returns the avatar actor as a pawn. */
+	UFUNCTION(BlueprintCallable, Category = Ability)
+	APawn* GetAvatarAsPawn() const;
 
 	// ----------------------------------------------------------------------------------------------------------------
 	//	Accessors
@@ -86,6 +91,10 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintPure = false, Category = Ability, meta = (ExpandBoolAsExecs = "ReturnValue"))
 	bool ChangeActivationGroup(EGameplayAbilityActivationGroup::Type DesiredGroup);
 
+	/** Returns all currently tracked actors for this ability. */
+	UFUNCTION(BlueprintCallable, Category = Ability)
+	TArray<AActor*> GetTrackedActors() const;
+
 	/** Tries to activate this ability on spawn. (For Passive abilities) */
 	virtual void TryActivateAbilityOnSpawn(const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilitySpec& Spec) const;
 
@@ -112,6 +121,27 @@ public:
 		NativeOnAbilityFailedToActivate(OverridenFailedReason);
 		ScriptOnAbilityFailedToActivate(OverridenFailedReason);
 	}
+
+	// ----------------------------------------------------------------------------------------------------------------
+	//	AI Related functions
+	// ----------------------------------------------------------------------------------------------------------------
+
+	/** Returns the AI controller that owns this ability. */
+	UFUNCTION(BlueprintCallable, Category = Ability)
+	AAIController* GetOwningAIController() const;
+
+	/** Updates the owning AI focal points. */
+	UFUNCTION(BlueprintCallable, Category = Ability, DisplayName="Set AI Focal Point")
+	void SetAIFocalPoint(AActor* FocusTarget, FVector FocalPoint, uint8 Priority);
+
+	/** Clears the AI focal points. */
+	UFUNCTION(BlueprintCallable, Category = Ability, DisplayName="Clear AI Focal Point")
+	void ClearAIFocalPoint(uint8 Priority);
+
+	/** Returns the actor that is currently being targeted by the AI. */
+	UFUNCTION(BlueprintCallable, Category = Ability, DisplayName="Get AI Ability Target")
+	AActor* GetAIAbilityTarget() const;
+
 
 protected:
 	//~ Begin UGameplayAbility Interface
