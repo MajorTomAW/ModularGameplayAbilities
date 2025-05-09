@@ -175,9 +175,9 @@ void UModularAbilitySet::GiveToAbilitySystem(
 	}
 
 	// Grant the effects
-	for (int32 Idx = 0; Idx < Effects.Num(); ++Idx)
+	for (int32 Idx = 0; Idx < GameplayEffects.Num(); ++Idx)
 	{
-		const auto& Effect = Effects[Idx];
+		const auto& Effect = GameplayEffects[Idx];
 
 		if (!IsValid(Effect.EffectClass))
 		{
@@ -257,7 +257,7 @@ EDataValidationResult UModularAbilitySet::IsDataValid(class FDataValidationConte
 	}
 
 	// Validate the effects
-	for (const auto& Effect : Effects)
+	for (const auto& Effect : GameplayEffects)
 	{
 		if (!Effect.EffectClass)
 		{

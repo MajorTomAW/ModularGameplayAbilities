@@ -32,6 +32,10 @@
 			"Enabled": true
 		},
 		{
+			"Name": "TargetingSystem",
+			"Enabled": true
+		},
+		{
 			"Name": "GameFeatures",
 			"Enabled": true
 		}

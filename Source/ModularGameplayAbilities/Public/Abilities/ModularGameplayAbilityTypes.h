@@ -53,3 +53,21 @@ namespace EGameplayAbilityActivationGroup
 		MAX							UMETA(Hidden),
 	};
 }
+
+/** Tracking-info struct used to track actors that are being tracked by the ability system. */
+USTRUCT(BlueprintType)
+struct FAbilityTrackedActorEntry
+{
+	GENERATED_BODY()
+
+	FAbilityTrackedActorEntry() = default;
+	virtual ~FAbilityTrackedActorEntry() = default;
+
+	/** The time the actor was started being tracked. */
+	UPROPERTY(BlueprintReadWrite, Category=Tracking)
+	float TrackedTime;
+
+	/** The actor that is being tracked. */
+	UPROPERTY(BlueprintReadWrite, Category=Tracking)
+	TWeakObjectPtr<AActor> TrackedActor;
+};

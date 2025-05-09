@@ -10,6 +10,7 @@
 #include "Abilities/Costs/ModularAbilityCost.h"
 #include "GameFramework/PlayerState.h"
 #include "Misc/DataValidation.h"
+#include "Runtime/AIModule/Classes/AIController.h"
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(ModularGameplayAbility)
 
@@ -118,6 +119,16 @@ AController* UModularGameplayAbility::GetControllerFromActorInfo() const
 	return nullptr;
 }
 
+APawn* UModularGameplayAbility::GetAvatarAsPawn() const
+{
+	if (AActor* Avatar = GetAvatarActorFromActorInfo())
+	{
+		return Cast<APawn>(Avatar);
+	}
+
+	return nullptr;
+}
+
 bool UModularGameplayAbility::CanChangeActivationGroup(EGameplayAbilityActivationGroup::Type DesiredGroup) const
 {
 	if (!IsInstantiated() || !IsActive())
@@ -171,6 +182,43 @@ bool UModularGameplayAbility::ChangeActivationGroup(EGameplayAbilityActivationGr
 	}
 
 	return true;
+}
+
+TArray<AActor*> UModularGameplayAbility::GetTrackedActors() const
+{
+	TArray<AActor*> TrackedActors;
+
+	if (!CurrentActorInfo || !IsInstantiated())
+	{
+		return TrackedActors;
+	}
+
+	UModularAbilitySystemComponent* AbilitySystem =
+		Cast<UModularAbilitySystemComponent>(CurrentActorInfo->AbilitySystemComponent.Get());
+	if (!AbilitySystem)
+	{
+		return TrackedActors;
+	}
+
+	const FGameplayAbilitySpecHandle SpecHandle = GetCurrentAbilitySpecHandle();
+	if (!SpecHandle.IsValid())
+	{
+		return TrackedActors;
+	}
+
+	if (const TArray<FAbilityTrackedActorEntry>* TrackedEntries =
+		AbilitySystem->AbilitySpecTrackedActors.Find(SpecHandle))
+	{
+		for (const auto& Entry : *TrackedEntries)
+		{
+			if (Entry.TrackedActor.IsValid())
+			{
+				TrackedActors.Add(Entry.TrackedActor.Get());
+			}
+		}
+	}
+
+	return TrackedActors;
 }
 
 void UModularGameplayAbility::TryActivateAbilityOnSpawn(const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilitySpec& Spec) const
@@ -253,6 +301,57 @@ bool UModularGameplayAbility::ShouldReceiveInputEvents() const
 	}
 
 	return bForceReceiveInput;
+}
+
+AAIController* UModularGameplayAbility::GetOwningAIController() const
+{
+	AAIController* AIController = Cast<AAIController>(GetControllerFromActorInfo());
+
+	if (AIController == nullptr)
+	{
+		if (const APawn* Pawn = Cast<APawn>(GetAvatarActorFromActorInfo()))
+		{
+			AIController = Pawn->GetController<AAIController>();
+		}
+	}
+
+	return AIController;
+}
+
+void UModularGameplayAbility::SetAIFocalPoint(AActor* FocusTarget, FVector FocalPoint, uint8 Priority)
+{
+	if (AAIController* AIController = GetOwningAIController())
+	{
+		// Decide whether to set the focus or focal points based on which data is valid
+		if (IsValid(FocusTarget))
+		{
+			AIController->SetFocus(FocusTarget, Priority);
+		}
+		else if (!FocalPoint.IsNearlyZero())
+		{
+			AIController->SetFocalPoint(FocalPoint, Priority);
+		}
+	}
+}
+
+void UModularGameplayAbility::ClearAIFocalPoint(uint8 Priority)
+{
+	if (AAIController* AIController = GetOwningAIController())
+	{
+		// Just clear the focus
+		AIController->ClearFocus(Priority);
+	}
+}
+
+AActor* UModularGameplayAbility::GetAIAbilityTarget() const
+{
+	// The targeting actor is equivalent to the focus actor
+	if (const AAIController* AIController = GetOwningAIController())
+	{
+		return AIController->GetFocusActor();
+	}
+
+	return nullptr;
 }
 
 bool UModularGameplayAbility::CanActivateAbility(

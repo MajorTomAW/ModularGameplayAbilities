@@ -128,6 +128,74 @@ void UModularAbilitySystemComponent::GetAdditionalActivationTagRequirements(
 	}
 }
 
+FGameplayAbilitySpecHandle UModularAbilitySystemComponent::GetTrackedActorsForAbility(
+	const UGameplayAbility* Ability,
+	TArray<FAbilityTrackedActorEntry>& OutTrackedActors) const
+{
+	OutTrackedActors.Reset();
+
+	// Make sure we have a valid ability
+	if (!Ability || !Ability->GetCurrentActorInfo())
+	{
+		return FGameplayAbilitySpecHandle();
+	}
+
+	// Only instantiated abilities can have tracked actors
+	if (!Ability->IsInstantiated())
+	{
+		return FGameplayAbilitySpecHandle();
+	}
+	
+	UModularAbilitySystemComponent* AbilitySystem =
+		Cast<UModularAbilitySystemComponent>(Ability->GetCurrentActorInfo()->AbilitySystemComponent.Get());
+	if (!AbilitySystem)
+	{
+		return FGameplayAbilitySpecHandle();
+	}
+
+	FGameplayAbilitySpecHandle SpecHandle = Ability->GetCurrentAbilitySpecHandle();
+	if (!SpecHandle.IsValid())
+	{
+		return FGameplayAbilitySpecHandle();
+	}
+
+	const auto& TrackedActorsMap = AbilitySystem->AbilitySpecTrackedActors;
+	if (!TrackedActorsMap.Contains(SpecHandle))
+	{
+		return FGameplayAbilitySpecHandle();
+	}
+
+	if (const TArray<FAbilityTrackedActorEntry>* TrackedActors = TrackedActorsMap.Find(SpecHandle))
+	{
+		OutTrackedActors = *TrackedActors;
+	}
+
+	return SpecHandle;
+}
+
+void UModularAbilitySystemComponent::GetTrackedActorsForTag(
+	const FGameplayTag& Tag,
+	TArray<FAbilityTrackedActorEntry>& OutTrackedActors) const
+{
+	OutTrackedActors.Reset();
+
+	if (!Tag.IsValid())
+	{
+		return;
+	}
+
+	const auto& TrackedActorsMap = TagTrackedActors;
+	if (!TrackedActorsMap.Contains(Tag))
+	{
+		return;
+	}
+
+	if (const TArray<FAbilityTrackedActorEntry>* TrackedActors = TrackedActorsMap.Find(Tag))
+	{
+		OutTrackedActors = *TrackedActors;
+	}
+}
+
 void UModularAbilitySystemComponent::AbilitySpecInputPressed(FGameplayAbilitySpec& Spec)
 {
 	Super::AbilitySpecInputPressed(Spec);
