@@ -163,11 +163,11 @@ public:
 
 protected:
 	/** Abilities to grant when this set is given. */
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Abilities", meta = (TitleProperty=AbilityClass))
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = AbilitySystem, meta = (TitleProperty=AbilityClass))
 	TArray<FModularAbilitySet_GameplayAbility> Abilities;
 
 	/** Abilities to grant when this set is given. */
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = AbilitySystem)
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = AbilitySystem)
 	TArray<TSoftClassPtr<UGameplayAbility>> GameplayAbilities;
 
 	/** Effects to grant when this set is given. */
@@ -175,11 +175,11 @@ protected:
 	TArray<FModularAbilitySet_GameplayEffect> GameplayEffects;
 
 	/** List of gameplay abilities that are meant to be activated by input. */
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Input)
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = Input)
 	TArray<FAbilityActivatedByInputData> InputActivatedAbilities;
 
 	/** Attribute sets to grant when this set is given. */
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Attributes", meta = (TitleProperty=AttributeSetClass))
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Attributes, meta = (TitleProperty=AttributeSetClass))
 	TArray<FModularAbilitySet_AttributeSet> AttributeSets;
 
 protected:

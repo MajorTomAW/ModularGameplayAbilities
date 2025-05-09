@@ -38,7 +38,10 @@ void FModularAbilitySet_GrantedHandles::AppendAbilitySpecHandles(const TArray<FG
 {
 	for (const auto& Handle : InHandles)
 	{
-		AddAbilitySpecHandle(Handle);
+		if (Handle.IsValid())
+		{
+			AddAbilitySpecHandle(Handle);	
+		}
 	}
 }
 
@@ -56,7 +59,10 @@ void FModularAbilitySet_GrantedHandles::AppendGameplayEffectHandles(const TArray
 {
 	for (const auto& Handle : InHandles)
 	{
-		AddGameplayEffectHandle(Handle);
+		if (Handle.IsValid())
+		{
+			AddGameplayEffectHandle(Handle);	
+		}
 	}
 }
 
@@ -75,7 +81,10 @@ void FModularAbilitySet_GrantedHandles::AppendAttributeSets(const TArray<UAttrib
 {
 	for (UAttributeSet* Set : InAttributeSets)
 	{
-		AddAttributeSet(Set);
+		if (IsValid(Set))
+		{
+			AddAttributeSet(Set);	
+		}
 	}
 }
 

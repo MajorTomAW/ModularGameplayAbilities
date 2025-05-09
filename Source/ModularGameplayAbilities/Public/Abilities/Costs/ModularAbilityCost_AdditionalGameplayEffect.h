@@ -8,7 +8,12 @@
 #include "ModularAbilityCost_AdditionalGameplayEffect.generated.h"
 
 class UGameplayEffect;
-/** Represents a cost that provides an additional gameplay effect to be applied to the ability system. */
+
+/** Represents a cost that provides an additional gameplay effect to be applied to the ability system.
+ * 
+ * Note that this cost is pretty much pointless
+ * and only exists for the sake of giving an example of how these costs can be used.
+ */
 USTRUCT(DisplayName="Additional Cost Effect")
 struct FModularAbilityCost_AdditionalGameplayEffect : public FModularAbilityCost
 {

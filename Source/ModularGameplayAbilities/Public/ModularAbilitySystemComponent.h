@@ -67,6 +67,7 @@ public:
 	void CancelActivationGroupAbilities(EGameplayAbilityActivationGroup::Type Group, UModularGameplayAbility* AbilityToIgnore, bool bReplicateCancelAbilities = true);
 
 	/** Sets the current tag relationship mapping. */
+	UFUNCTION(BlueprintCallable, Category = AbilitySystem)
 	virtual void SetTagRelationshipMapping(UModularAbilityTagRelationshipMapping* NewMapping);
 
 	/** Looks at ability tags and gathers additional required and blocked tags. */
