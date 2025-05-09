@@ -54,7 +54,7 @@ public:
 	//	Activation Groups
 	// ----------------------------------------------------------------------------------------------------------------
 
-	/** Returns true, if the specified activation group is blocked. */
+	/** Returns true if the specified activation group is blocked. */
 	bool IsActivationGroupBlocked(EGameplayAbilityActivationGroup::Type Group) const;
 
 	/** Adds the ability to the specified activation group count. */
@@ -69,6 +69,10 @@ public:
 	/** Sets the current tag relationship mapping. */
 	UFUNCTION(BlueprintCallable, Category = AbilitySystem)
 	virtual void SetTagRelationshipMapping(UModularAbilityTagRelationshipMapping* NewMapping);
+
+	/** Clears the current tag relationship mapping. */
+	UFUNCTION(BlueprintCallable, Category = AbilitySystem)
+	virtual void ClearTagRelationshipMapping();
 
 	/** Looks at ability tags and gathers additional required and blocked tags. */
 	virtual void GetAdditionalActivationTagRequirements(const FGameplayTagContainer& AbilityTags, FGameplayTagContainer& OutActivationRequired, FGameplayTagContainer& OutActivationBlocked) const;

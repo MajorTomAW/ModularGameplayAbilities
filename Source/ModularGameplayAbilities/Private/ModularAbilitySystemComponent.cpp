@@ -117,6 +117,16 @@ void UModularAbilitySystemComponent::SetTagRelationshipMapping(UModularAbilityTa
 	TagRelationshipMapping = NewMapping;
 }
 
+void UModularAbilitySystemComponent::ClearTagRelationshipMapping()
+{
+	if (IsValid(TagRelationshipMapping))
+	{
+		// Do some cleanup ??
+	}
+
+	TagRelationshipMapping = nullptr;
+}
+
 void UModularAbilitySystemComponent::GetAdditionalActivationTagRequirements(
 	const FGameplayTagContainer& AbilityTags,
 	FGameplayTagContainer& OutActivationRequired,

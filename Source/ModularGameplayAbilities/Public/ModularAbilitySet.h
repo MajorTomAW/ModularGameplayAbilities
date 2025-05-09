@@ -94,6 +94,7 @@ public:
 	FModularAbilitySet_GrantedHandles()
 	{
 	}
+	virtual ~FModularAbilitySet_GrantedHandles() = default;
 
 	/** Adds a new ability spec handle to the granted handles. */
 	MODULARGAMEPLAYABILITIES_API void AddAbilitySpecHandle(const FGameplayAbilitySpecHandle& InHandle);
@@ -145,9 +146,7 @@ protected:
 	TArray<TObjectPtr<UAttributeSet>> GrantedAttributeSets;
 };
 
-/**
- * Non-mutable set of abilities that can be granted or removed to an actor that has an ability system component.
- */
+/** Non-mutable set of abilities that can be granted or removed to an actor that has an ability system component. */
 UCLASS(BlueprintType, Const)
 class MODULARGAMEPLAYABILITIES_API UModularAbilitySet : public UPrimaryDataAsset
 {
