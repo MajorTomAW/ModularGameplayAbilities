@@ -186,6 +186,11 @@ protected:
 	void K2_OnAbilityInputReleased(float TimeHeld);
 	bool bHasBlueprintInputReleased; // If not implemented, no need to listen or send replicated input events.
 
+	/** Called while the matching input event is ongoing */
+	UFUNCTION(BlueprintImplementableEvent, Category = Ability, DisplayName = OnAbilityInputOngoing)
+	void K2_OnAbilityInputOngoing(const FGameplayEventData& TriggerEventData);
+	bool bHasBlueprintInputOngoing; // If not implemented, no need to listen or send replicated input events.
+
 	/** Callback function for when the input is pressed or released. */
 	UFUNCTION()
 	void OnInputChangedCallback(bool bIsPressed);
@@ -195,6 +200,8 @@ protected:
 	 * Can be used to determine how long the input was pressed or released.
 	 */
 	float LastInputCallbackTime;
+
+	void OnInputEventReceived(const FGameplayEventData* Payload);
 
 protected:
 	// ----------------------------------------------------------------------------------------------------------------

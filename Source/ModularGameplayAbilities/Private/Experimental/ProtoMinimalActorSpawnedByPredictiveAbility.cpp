@@ -10,7 +10,12 @@ AProtoMinimalActorSpawnedByPredictiveAbility::AProtoMinimalActorSpawnedByPredict
 	
 	NetDormancy = DORM_DormantAll;
 	bReplicates = true;
+
+#if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION >= 5
 	SetNetUpdateFrequency(1.0f);
+#else
+	NetUpdateFrequency = 1.0f;
+#endif
 }
 
 bool AProtoMinimalActorSpawnedByPredictiveAbility::IsNetRelevantFor(

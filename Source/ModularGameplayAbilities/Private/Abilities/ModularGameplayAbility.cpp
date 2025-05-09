@@ -68,6 +68,10 @@ UModularGameplayAbility::UModularGameplayAbility(const FObjectInitializer& Objec
 		const UFunction* Func = GetClass()->FindFunctionByName(GET_FUNCTION_NAME_CHECKED(ThisClass, K2_OnAbilityInputReleased));
 		bHasBlueprintInputReleased = ImplementedInBlueprint(Func);
 	}
+	{ // Input ongoing
+		const UFunction* Func = GetClass()->FindFunctionByName(GET_FUNCTION_NAME_CHECKED(ThisClass, K2_OnAbilityInputOngoing));
+		bHasBlueprintInputOngoing = ImplementedInBlueprint(Func);
+	}
 }
 
 AController* UModularGameplayAbility::GetControllerFromActorInfo() const
@@ -422,6 +426,10 @@ void UModularGameplayAbility::OnInputChangedCallback(bool bIsPressed)
 	{
 		K2_OnAbilityInputReleased(ElapsedTime);
 	}
+}
+
+void UModularGameplayAbility::OnInputEventReceived(const FGameplayEventData* Payload)
+{
 }
 
 void UModularGameplayAbility::EndAbility(
