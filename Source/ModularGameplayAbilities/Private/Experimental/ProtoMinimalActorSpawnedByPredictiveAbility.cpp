@@ -8,8 +8,8 @@ AProtoMinimalActorSpawnedByPredictiveAbility::AProtoMinimalActorSpawnedByPredict
 {
 	PrimaryActorTick.bCanEverTick = true;
 	
-	NetDormancy = DORM_DormantAll;
 	bReplicates = true;
+	SetNetDormancy(DORM_DormantAll);
 
 #if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION >= 5
 	SetNetUpdateFrequency(1.0f);
