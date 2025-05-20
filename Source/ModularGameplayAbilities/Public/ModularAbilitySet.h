@@ -157,8 +157,11 @@ public:
 
 	/** Grants the abilities, effects, and attribute sets to the given ability system component. */
 	virtual void GiveToAbilitySystem(UAbilitySystemComponent* AbilitySystem, FModularAbilitySet_GrantedHandles* OutGrantedHandles, UObject* SourceObject = nullptr) const;
-	virtual void GiveToAbilitySystem(UAbilitySystemComponent* AbilitySystem, UObject* SourceObject = nullptr) const;
 	virtual void GiveToAbilitySystem(UAbilitySystemComponent* AbilitySystem, TArray<FGameplayAbilitySpecHandle>* OutAbilityHandles, TArray<FActiveGameplayEffectHandle>* OutEffectHandles, TArray<TObjectPtr<UAttributeSet>>* OutAttributeSets, UObject* SourceObject = nullptr) const;
+
+	/** Grants the abilities, effects, and attribute sets to the given ability system component. */
+	UFUNCTION(BlueprintCallable, Category=AbilitySet)
+	virtual void GiveToAbilitySystem(UAbilitySystemComponent* AbilitySystem, UObject* SourceObject = nullptr) const;
 
 protected:
 	/** Abilities to grant when this set is given. */
