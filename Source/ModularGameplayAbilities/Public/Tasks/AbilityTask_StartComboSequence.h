@@ -1,4 +1,4 @@
-// Copyright © 2025 Playton. All Rights Reserved.
+// Author: Tom Werner (MajorT), 2025
 
 #pragma once
 

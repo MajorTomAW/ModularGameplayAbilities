@@ -1,4 +1,4 @@
-// Copyright © 2024 Boring Games. All rights reserved.
+// Author: Tom Werner (MajorT), 2025
 
 
 #include "Abilities/TargetData/GameplayAbilityTargetActor_CursorGroundTrace.h"

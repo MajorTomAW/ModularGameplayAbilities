@@ -1,4 +1,4 @@
-// Copyright © 2025 MajorT. All Rights Reserved.
+// Author: Tom Werner (MajorT), 2025
 
 
 #include "Abilities/Costs/ModularAbilityCost_AdditionalGameplayEffect.h"
