@@ -9,7 +9,9 @@
 //////////////////////////////////////////////////////////////////////////
 /// UAbilitySetFactory
 
-UCLASS(HideCategories = Object)
+class UModularAbilitySet;
+
+UCLASS(HideCategories = Object, Config=Editor)
 class UAbilitySetFactory : public UFactory
 {
 	GENERATED_BODY()
@@ -23,6 +25,13 @@ protected:
 	virtual bool ConfigureProperties() override;
 	virtual UObject* FactoryCreateNew(UClass* InClass, UObject* InParent, FName InName, EObjectFlags Flags, UObject* Context, FFeedbackContext* Warn, FName CallingContext) override;
 	//~ End UFactory Interface
+	
+private:
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<UModularAbilitySet> SelectedAssetClass;
+
+	UPROPERTY(Config)
+	TArray<FSoftClassPath> CommonAssetClasses;
 };
 
 //////////////////////////////////////////////////////////////////////////

@@ -11,13 +11,14 @@
 
 #include "AbilitySystemComponent.h"
 #include "AbilitySystemLog.h"
+#include "ModularGameplayAbilitiesSettings.h"
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(ModularAbilitySet)
 
 ////////////////////////////////////////////////////////////////////////
-/// FModularAbilitySet_GrantedHandles
+/// FAbilitySetHandle
 
-void FModularAbilitySet_GrantedHandles::AppendHandles(const FModularAbilitySet_GrantedHandles& InGrantedHandles)
+void FAbilitySetHandle::AppendHandles(const FAbilitySetHandle& InGrantedHandles)
 {
 	AppendAttributeSets(InGrantedHandles.GrantedAttributeSets);
 	AppendAbilitySpecHandles(InGrantedHandles.GrantedAbilityHandles);
@@ -25,16 +26,20 @@ void FModularAbilitySet_GrantedHandles::AppendHandles(const FModularAbilitySet_G
 }
 
 
+void FAbilitySetHandle::SetTargetAbilitySystem(UAbilitySystemComponent* InAbilitySystem)
+{
+	check(InAbilitySystem);
+	TargetAbilitySystem = InAbilitySystem;
+}
 
-
-void FModularAbilitySet_GrantedHandles::AddAbilitySpecHandle(const FGameplayAbilitySpecHandle& InHandle)
+void FAbilitySetHandle::AddAbilitySpecHandle(const FGameplayAbilitySpecHandle& InHandle)
 {
 	if (InHandle.IsValid())
 	{
 		GrantedAbilityHandles.Add(InHandle);
 	}
 }
-void FModularAbilitySet_GrantedHandles::AppendAbilitySpecHandles(const TArray<FGameplayAbilitySpecHandle>& InHandles)
+void FAbilitySetHandle::AppendAbilitySpecHandles(const TArray<FGameplayAbilitySpecHandle>& InHandles)
 {
 	for (const auto& Handle : InHandles)
 	{
@@ -48,14 +53,14 @@ void FModularAbilitySet_GrantedHandles::AppendAbilitySpecHandles(const TArray<FG
 
 
 
-void FModularAbilitySet_GrantedHandles::AddGameplayEffectHandle(const FActiveGameplayEffectHandle& InHandle)
+void FAbilitySetHandle::AddGameplayEffectHandle(const FActiveGameplayEffectHandle& InHandle)
 {
 	if (InHandle.IsValid())
 	{
 		GrantedEffectHandles.Add(InHandle);
 	}
 }
-void FModularAbilitySet_GrantedHandles::AppendGameplayEffectHandles(const TArray<FActiveGameplayEffectHandle>& InHandles)
+void FAbilitySetHandle::AppendGameplayEffectHandles(const TArray<FActiveGameplayEffectHandle>& InHandles)
 {
 	for (const auto& Handle : InHandles)
 	{
@@ -70,14 +75,14 @@ void FModularAbilitySet_GrantedHandles::AppendGameplayEffectHandles(const TArray
 
 
 
-void FModularAbilitySet_GrantedHandles::AddAttributeSet(UAttributeSet* InAttributeSet)
+void FAbilitySetHandle::AddAttributeSet(UAttributeSet* InAttributeSet)
 {
 	if (InAttributeSet)
 	{
 		GrantedAttributeSets.Add(InAttributeSet);
 	}
 }
-void FModularAbilitySet_GrantedHandles::AppendAttributeSets(const TArray<UAttributeSet*>& InAttributeSets)
+void FAbilitySetHandle::AppendAttributeSets(const TArray<UAttributeSet*>& InAttributeSets)
 {
 	for (UAttributeSet* Set : InAttributeSets)
 	{
@@ -92,9 +97,10 @@ void FModularAbilitySet_GrantedHandles::AppendAttributeSets(const TArray<UAttrib
 
 
 
-void FModularAbilitySet_GrantedHandles::TakeFromAbilitySystem(UAbilitySystemComponent* AbilitySystem)
+void FAbilitySetHandle::TakeFromAbilitySystem()
 {
-	check(AbilitySystem);
+	check(TargetAbilitySystem.IsValid());
+	UAbilitySystemComponent* AbilitySystem = TargetAbilitySystem.Get();
 
 	// Only authority can give or take abilities
 	if (!AbilitySystem->IsOwnerActorAuthoritative())
@@ -132,6 +138,7 @@ void FModularAbilitySet_GrantedHandles::TakeFromAbilitySystem(UAbilitySystemComp
 	GrantedAbilityHandles.Empty();
 	GrantedEffectHandles.Empty();
 	GrantedAttributeSets.Empty();
+	TargetAbilitySystem.Reset();
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -143,7 +150,7 @@ UModularAbilitySet::UModularAbilitySet(const FObjectInitializer& ObjectInitializ
 }
 
 void UModularAbilitySet::GiveToAbilitySystem(
-	UAbilitySystemComponent* AbilitySystem, FModularAbilitySet_GrantedHandles* OutGrantedHandles, UObject* SourceObject) const
+	UAbilitySystemComponent* AbilitySystem, FAbilitySetHandle* OutHandle, UObject* SourceObject) const
 {
 	check(AbilitySystem);
 
@@ -153,33 +160,63 @@ void UModularAbilitySet::GiveToAbilitySystem(
 		return;
 	}
 
-	// Grant the abilities
-	for (int32 Idx = 0; Idx < Abilities.Num(); ++Idx)
+	// Assign ASC
+	if (OutHandle)
 	{
-		const auto& Ability = Abilities[Idx];
-		if (Ability.AbilityClass.IsNull())
+		OutHandle->SetTargetAbilitySystem(AbilitySystem);
+	}
+
+	// Grant the abilities
+	if (UModularGameplayAbilitiesSettings::IsUsingExperimentalInput())
+	{
+		for (int32 Idx = 0; Idx < GameplayAbilities.Num(); ++Idx)
 		{
-			ABILITY_LOG(Error, TEXT("Ability at index %d is invalid."), Idx);
-			continue;
-		}
+			const auto& Ability = GameplayAbilities.Array()[Idx];
+			if (Ability.IsNull())
+			{
+				ABILITY_LOG(Error, TEXT("Ability at index %d is invalid."), Idx);
+				continue;
+			}
 
-		const UClass* AbilityClass = Ability.AbilityClass.LoadSynchronous();
-		UGameplayAbility* CDO = AbilityClass->GetDefaultObject<UGameplayAbility>();
+			const UClass* AbilityClass = Ability.LoadSynchronous();
+			UGameplayAbility* CDO = AbilityClass->GetDefaultObject<UGameplayAbility>();
 
-		FGameplayAbilitySpec Spec(CDO, Ability.AbilityLevel);
-		Spec.SourceObject = SourceObject;
+			FGameplayAbilitySpec Spec(CDO, 1.f);
+			Spec.SourceObject = SourceObject;
 
-#if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION >= 5
-		Spec.GetDynamicSpecSourceTags().AddTag(Ability.InputTag);
-#else
-		Spec.DynamicAbilityTags.AddTag(Ability.InputTag);
-#endif
+			const FGameplayAbilitySpecHandle Handle = AbilitySystem->GiveAbility(Spec);
 
-		const FGameplayAbilitySpecHandle Handle = AbilitySystem->GiveAbility(Spec);
-
-		if (OutGrantedHandles)
+			if (OutHandle)
+			{
+				OutHandle->AddAbilitySpecHandle(Handle);
+			}
+		}	
+	}
+	else
+	{
+		for (int32 Idx = 0; Idx < Abilities.Num(); ++Idx)
 		{
-			OutGrantedHandles->AddAbilitySpecHandle(Handle);
+			const auto& Ability = Abilities[Idx];
+
+			if (Ability.AbilityClass.IsNull())
+			{
+				ABILITY_LOG(Error, TEXT("Ability at index %d is invalid."), Idx);
+				continue;
+			}
+
+			const UClass* AbilityClass = Ability.AbilityClass.LoadSynchronous();
+			UGameplayAbility* CDO = AbilityClass->GetDefaultObject<UGameplayAbility>();
+			
+			FGameplayAbilitySpec Spec(CDO, Ability.AbilityLevel);
+			Spec.SourceObject = SourceObject;
+			Spec.GetDynamicSpecSourceTags().AddTag(Ability.InputTag);
+
+			const FGameplayAbilitySpecHandle Handle = AbilitySystem->GiveAbility(Spec);
+			
+			if (OutHandle)
+			{
+				OutHandle->AddAbilitySpecHandle(Handle);
+			}
 		}
 	}
 
@@ -197,9 +234,9 @@ void UModularAbilitySet::GiveToAbilitySystem(
 		const UGameplayEffect* EffectCDO = Effect.EffectClass->GetDefaultObject<UGameplayEffect>();
 		const FActiveGameplayEffectHandle Handle = AbilitySystem->ApplyGameplayEffectToSelf(EffectCDO, Effect.EffectLevel, AbilitySystem->MakeEffectContext());
 
-		if (OutGrantedHandles)
+		if (OutHandle)
 		{
-			OutGrantedHandles->AddGameplayEffectHandle(Handle);
+			OutHandle->AddGameplayEffectHandle(Handle);
 		}
 	}
 
@@ -217,9 +254,9 @@ void UModularAbilitySet::GiveToAbilitySystem(
 		UAttributeSet* NewSet = NewObject<UAttributeSet>(AbilitySystem->GetOwner(), AttributeSet.AttributeSetClass);
 		AbilitySystem->AddAttributeSetSubobject(NewSet);
 
-		if (OutGrantedHandles)
+		if (OutHandle)
 		{
-			OutGrantedHandles->AddAttributeSet(NewSet);
+			OutHandle->AddAttributeSet(NewSet);
 		}
 	}
 }
@@ -240,7 +277,7 @@ void UModularAbilitySet::GiveToAbilitySystem(
 	OutEffectHandles->Reset();
 	OutAttributeSets->Reset();
 	
-	FModularAbilitySet_GrantedHandles TempHandles;
+	FAbilitySetHandle TempHandles;
 	GiveToAbilitySystem(AbilitySystem, &TempHandles, SourceObject);
 
 	// Copy the handles and attribute sets
@@ -255,13 +292,28 @@ EDataValidationResult UModularAbilitySet::IsDataValid(class FDataValidationConte
 	EDataValidationResult Result = Super::IsDataValid(Context);
 
 	// Validate the abilities
-	for (const auto& Ability : Abilities)
+	if (UModularGameplayAbilitiesSettings::IsUsingExperimentalInput())
 	{
-		if (Ability.AbilityClass.IsNull())
+		for (const auto& Ability : GameplayAbilities.Array())
 		{
-			Result = EDataValidationResult::Invalid;
-			Context.AddError(FText::Format(LOCTEXT("InvalidAbilityClass", "Ability class is invalid in {0}."),
-				FText::FromString(GetPathName())));
+			if (Ability.IsNull())
+			{
+				Result = EDataValidationResult::Invalid;
+				Context.AddError(FText::Format(LOCTEXT("InvalidGameplayAbility", "Gameplay ability is invalid in {0}."),
+					FText::FromString(GetPathName())));
+			}
+		}
+	}
+	else
+	{
+		for (const auto& Ability : Abilities)
+		{
+			if (Ability.AbilityClass.IsNull())
+			{
+				Result = EDataValidationResult::Invalid;
+				Context.AddError(FText::Format(LOCTEXT("InvalidAbilityClass", "Ability class is invalid in {0}."),
+					FText::FromString(GetPathName())));
+			}
 		}
 	}
 

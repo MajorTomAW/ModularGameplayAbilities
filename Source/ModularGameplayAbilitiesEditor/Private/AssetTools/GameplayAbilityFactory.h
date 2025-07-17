@@ -45,5 +45,5 @@ protected:
 
 private:
 	UPROPERTY(Config)
-	TArray<TObjectPtr<UClass>> CommonEffectClasses;
+	TArray<TObjectPtr<UClass>> CommonEffectClasses;	
 };

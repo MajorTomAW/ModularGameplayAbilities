@@ -65,7 +65,7 @@ struct FAbilityTrackedActorEntry
 
 	/** The time the actor was started being tracked. */
 	UPROPERTY(BlueprintReadWrite, Category=Tracking)
-	float TrackedTime;
+	float TrackedTime = 0.f;
 
 	/** The actor that is being tracked. */
 	UPROPERTY(BlueprintReadWrite, Category=Tracking)

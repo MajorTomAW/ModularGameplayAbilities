@@ -1,4 +1,9 @@
-// Copyright © 2024 MajorT. All Rights Reserved.
+// Author: Tom Werner (MajorT), 2025
+
+// Don't believe everything I do here, I also make mistakes/logic errors.
+// This ability class is just meant to provide a base for your own abilities without having to recreate the wheel.
+// Personally, it was initially intended to be a boilerplate replacement for the UGameplayAbility class,
+// as I'm too lazy to rewrite it every time for a new project :p
 
 #pragma once
 
@@ -91,16 +96,41 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintPure = false, Category = Ability, meta = (ExpandBoolAsExecs = "ReturnValue"))
 	bool ChangeActivationGroup(EGameplayAbilityActivationGroup::Type DesiredGroup);
 
-	/** Returns all currently tracked actors for this ability. */
-	UFUNCTION(BlueprintCallable, Category = Ability)
-	TArray<AActor*> GetTrackedActors() const;
-
 	/** Tries to activate this ability on spawn. (For Passive abilities) */
 	virtual void TryActivateAbilityOnSpawn(const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilitySpec& Spec) const;
 
 	//~ Begin IGameplayTagAssetInterface Interface
 	virtual void GetOwnedGameplayTags(FGameplayTagContainer& TagContainer) const override;
 	//~ End IGameplayTagAssetInterface Interface
+
+
+	/** Returns the maximum number of actors that can be tracked by this ability as an integer. */
+	UFUNCTION(BlueprintCallable, Category = Ability, BlueprintAuthorityOnly)
+	int32 GetMaxNumTrackedActors() const { return MaxTrackedActors.AsInteger(); }
+
+	/** Returns all currently tracked actors for this ability. */
+	UFUNCTION(BlueprintCallable, Category = Ability, BlueprintAuthorityOnly)
+	TArray<AActor*> GetTrackedActors() const;
+
+	/** Returns all currently tracked actors for the specified group. */
+	UFUNCTION(BlueprintCallable, Category = Ability, BlueprintAuthorityOnly)
+	TArray<AActor*> GetTrackedGroupedActors(FGameplayTag GroupTag) const;
+
+	/** Attempts to start tracking the specified actor. */
+	UFUNCTION(BlueprintCallable, Category = Ability, BlueprintAuthorityOnly)
+	bool StartTrackingActor(AActor* ActorToTrack);
+
+	/** Attempts to start tracking the specified actor with a group tag. */
+	UFUNCTION(BlueprintCallable, Category = Ability, BlueprintAuthorityOnly)
+	bool StartTrackingActorWithGroup(AActor* ActorToTrack, FGameplayTag GroupTag);
+
+	/** Clears all tracked actors for this ability. */
+	UFUNCTION(BlueprintCallable, Category = Ability, BlueprintAuthorityOnly)
+	void ClearTrackedActors(bool bDestroyActors = false);
+
+	/** Clears all tracked actors for the specified group. */
+	UFUNCTION(BlueprintCallable, Category = Ability, BlueprintAuthorityOnly)
+	void ClearTrackedGroupedActors(FGameplayTag GroupTag, bool bDestroyActors = false);
 
 	/**
 	 * A delegate that gets fired whenever the ApplyCooldown() function is called on this ability.
@@ -126,6 +156,22 @@ public:
 	//	AI Related functions
 	// ----------------------------------------------------------------------------------------------------------------
 
+	/**
+	 * Triggers any AI-related events once the ability is activated.
+	 * @param OwningAIController The AI controller, which owns this ability, will only be valid when the ability is activated by an AI.
+	 */
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = Ability, DisplayName="Trigger AI Events On Activate")
+	void TriggerAIEventsOnActivate(AAIController* OwningAIController);
+	virtual void TriggerAIEventsOnActivate_Implementation(AAIController* OwningAIController);
+
+	/**
+	 * Triggers any AI-related events once the ability is deactivated.
+	 * @param OwningAIController The AI controller, which owns this ability, will only be valid when the ability is activated by an AI.
+	 */
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = Ability, DisplayName="Trigger AI Events On Deactivate")
+	void TriggerAIEventsOnDeactivate(AAIController* OwningAIController);
+	virtual void TriggerAIEventsOnDeactivate_Implementation(AAIController* OwningAIController);
+	
 	/** Returns the AI controller that owns this ability. */
 	UFUNCTION(BlueprintCallable, Category = Ability)
 	AAIController* GetOwningAIController() const;
@@ -255,6 +301,16 @@ protected:
 	uint8 bActivateIfTagsAlreadyPresent : 1;
 
 	// ----------------------------------------------------------------------------------------------------------------
+	//	Actor Tracking
+	// ----------------------------------------------------------------------------------------------------------------
+
+	UPROPERTY(EditDefaultsOnly, Category = ActorTracking)
+	uint8 bAutoUntrackActorsOnEndAbility : 1;
+	
+	UPROPERTY(EditDefaultsOnly, Category = ActorTracking)
+	FScalableFloat MaxTrackedActors;
+
+	// ----------------------------------------------------------------------------------------------------------------
 	//	Display
 	// ----------------------------------------------------------------------------------------------------------------
 
@@ -265,6 +321,10 @@ protected:
 	/** Optional description text of this ability to explain what it does. */
 	UPROPERTY(EditDefaultsOnly, Category = Display, meta=(MultiLine))
 	FText Description = FText::GetEmpty();
+
+	/** Optional icon to display in the HUD for this ability. */
+	UPROPERTY(EditDefaultsOnly, Category = Display)
+	TSoftObjectPtr<UTexture2D> AbilityIcon;
 
 	// ----------------------------------------------------------------------------------------------------------------
 	//	Cooldowns
@@ -324,6 +384,15 @@ protected:
 	float ActivationNoiseRange;
 
 	/** The loudness of the noise event that will be sent when the ability is activated. */
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = AI)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = AI/*, meta = (Units=decibels)*/)
 	float ActivationNoiseLoudness;
+
+private:
+	/** Flag to indicate if we need to resume any movement once the ability is deactivated. */
+	UPROPERTY(Transient)
+	uint8 bPausedAnyAIMovement:1 = false;
+
+	/** Flag to indicate if we need to resume any RVO avoidance once the ability is deactivated. */
+	UPROPERTY(Transient)
+	uint8 bPausedAnyAIBehaviorLogic:1 = false;
 };

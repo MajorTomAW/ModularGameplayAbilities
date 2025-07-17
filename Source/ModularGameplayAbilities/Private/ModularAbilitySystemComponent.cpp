@@ -6,6 +6,7 @@
 #include "AbilitySystemLog.h"
 #include "ModularAbilitySubsystem.h"
 #include "ModularAbilityTagRelationshipMapping.h"
+#include "ModularGameplayAbilitiesSettings.h"
 #include "Abilities/ModularGameplayAbility.h"
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(ModularAbilitySystemComponent)
@@ -183,6 +184,92 @@ FGameplayAbilitySpecHandle UModularAbilitySystemComponent::GetTrackedActorsForAb
 	return SpecHandle;
 }
 
+int32 UModularAbilitySystemComponent::GetNumTrackedActorsForAbility(const UGameplayAbility* Ability) const
+{
+	// Make sure we have a valid ability
+	if (!Ability || !Ability->GetCurrentActorInfo())
+	{
+		return 0;
+	}
+
+	// Only instantiated abilities can have tracked actors
+	if (!Ability->IsInstantiated())
+	{
+		return 0;
+	}
+	
+	UModularAbilitySystemComponent* AbilitySystem =
+		Cast<UModularAbilitySystemComponent>(Ability->GetCurrentActorInfo()->AbilitySystemComponent.Get());
+	if (!IsValid(AbilitySystem))
+	{
+		return 0;
+	}
+
+	FGameplayAbilitySpecHandle SpecHandle = Ability->GetCurrentAbilitySpecHandle();
+	if (!SpecHandle.IsValid())
+	{
+		return 0;
+	}
+
+	const TArray<FAbilityTrackedActorEntry>* TrackedActors = AbilitySpecTrackedActors.Find(SpecHandle);
+	if (TrackedActors == nullptr)
+	{
+		return 0;
+	}
+
+	return TrackedActors->Num();
+}
+
+bool UModularAbilitySystemComponent::StartTrackingActorForAbility(AActor* ActorToTrack, const UGameplayAbility* Ability)
+{
+	// Make sure we have a valid ability
+	if (!Ability || !Ability->GetCurrentActorInfo())
+	{
+		return false;
+	}
+
+	// Only instantiated abilities can have tracked actors
+	if (!Ability->IsInstantiated())
+	{
+		return false;
+	}
+	
+	UModularAbilitySystemComponent* AbilitySystem =
+		Cast<UModularAbilitySystemComponent>(Ability->GetCurrentActorInfo()->AbilitySystemComponent.Get());
+	if (!IsValid(AbilitySystem))
+	{
+		return false;
+	}
+
+	FGameplayAbilitySpecHandle SpecHandle = Ability->GetCurrentAbilitySpecHandle();
+	if (!SpecHandle.IsValid())
+	{
+		return false;
+	}
+
+	// Add and initialize the new tracked actor entry
+	FAbilityTrackedActorEntry& TrackedActor = AbilitySpecTrackedActors.FindOrAdd(SpecHandle).AddDefaulted_GetRef();
+	TrackedActor.TrackedActor = ActorToTrack;
+	TrackedActor.TrackedTime = AbilitySystem->GetWorld()->GetTimeSeconds();
+
+	return true;
+}
+
+bool UModularAbilitySystemComponent::StartTrackingActorsForTag(AActor* ActorToTrack, const FGameplayTag& GroupTag)
+{
+	if (!GroupTag.IsValid())
+	{
+		return false;
+	}
+
+	// Add and initialize the new tracked actor entry
+	FAbilityTrackedActorEntry& TrackedActor = TagTrackedActors.FindOrAdd(GroupTag).AddDefaulted_GetRef();
+	TrackedActor.TrackedActor = ActorToTrack;
+	TrackedActor.TrackedTime = GetWorld()->GetTimeSeconds();
+
+	return true;
+}
+
 void UModularAbilitySystemComponent::GetTrackedActorsForTag(
 	const FGameplayTag& Tag,
 	TArray<FAbilityTrackedActorEntry>& OutTrackedActors) const
@@ -193,17 +280,99 @@ void UModularAbilitySystemComponent::GetTrackedActorsForTag(
 	{
 		return;
 	}
-
-	const auto& TrackedActorsMap = TagTrackedActors;
-	if (!TrackedActorsMap.Contains(Tag))
+	
+	if (!TagTrackedActors.Contains(Tag))
 	{
 		return;
 	}
 
-	if (const TArray<FAbilityTrackedActorEntry>* TrackedActors = TrackedActorsMap.Find(Tag))
+	if (const TArray<FAbilityTrackedActorEntry>* TrackedActors = TagTrackedActors.Find(Tag))
 	{
 		OutTrackedActors = *TrackedActors;
 	}
+}
+
+void UModularAbilitySystemComponent::ClearTrackedActorsForAbility(const UGameplayAbility* Ability, bool bDestroyActors)
+{
+	// Make sure we have a valid ability
+	if (!Ability || !Ability->GetCurrentActorInfo())
+	{
+		return;
+	}
+
+	// Only instantiated abilities can have tracked actors
+	if (!Ability->IsInstantiated())
+	{
+		return;
+	}
+	
+	UModularAbilitySystemComponent* AbilitySystem =
+		Cast<UModularAbilitySystemComponent>(Ability->GetCurrentActorInfo()->AbilitySystemComponent.Get());
+	if (!IsValid(AbilitySystem))
+	{
+		return;
+	}
+
+	FGameplayAbilitySpecHandle SpecHandle = Ability->GetCurrentAbilitySpecHandle();
+	if (!SpecHandle.IsValid())
+	{
+		return;
+	}
+
+	if (!AbilitySpecTrackedActors.Contains(SpecHandle))
+	{
+		return;
+	}
+
+	if (bDestroyActors)
+	{
+		if (const TArray<FAbilityTrackedActorEntry>* TrackedActors = AbilitySpecTrackedActors.Find(SpecHandle))
+		{
+			for (const FAbilityTrackedActorEntry& Entry : *TrackedActors)
+			{
+				if (!Entry.TrackedActor.IsValid())
+				{
+					continue;
+				}
+
+
+				//@TODO: Naively destroy the actor and hope everything goes well ???
+				Entry.TrackedActor->Destroy();
+			}
+		}
+	}
+
+	//@TODO: Simply remove? Nothing else to do here?
+	AbilitySpecTrackedActors.Remove(SpecHandle);
+}
+
+void UModularAbilitySystemComponent::ClearTrackedGroupedActors(FGameplayTag GroupTag, bool bDestroyActors)
+{
+	if (!TagTrackedActors.Contains(GroupTag))
+	{
+		return;
+	}
+
+	if (bDestroyActors)
+	{
+		if (const TArray<FAbilityTrackedActorEntry>* TrackedActors = TagTrackedActors.Find(GroupTag))
+		{
+			for (const FAbilityTrackedActorEntry& Entry : *TrackedActors)
+			{
+				if (!Entry.TrackedActor.IsValid())
+				{
+					continue;
+				}
+
+
+				//@TODO: Naively destroy the actor and hope everything goes well ???
+				Entry.TrackedActor->Destroy();
+			}
+		}
+	}
+
+	//@TODO: Simply remove? Nothing else to do here?
+	TagTrackedActors.Remove(GroupTag);
 }
 
 void UModularAbilitySystemComponent::AbilitySpecInputPressed(FGameplayAbilitySpec& Spec)
@@ -495,6 +664,11 @@ void UModularAbilitySystemComponent::CancelInputActivatedAbilities(bool bReplica
 
 void UModularAbilitySystemComponent::AbilityInputTagPressed(const FGameplayTag& InputTag)
 {
+	if (UModularGameplayAbilitiesSettings::IsUsingExperimentalInput())
+	{
+		checkf(false, TEXT("UModularGameplayAbilitiesSettings::IsUsingExperimentalInput() is enabled. Please use the new input system instead of the old one."));
+	}
+	
 	if (!InputTag.IsValid())
 	{
 		return;
@@ -535,6 +709,11 @@ void UModularAbilitySystemComponent::AbilityInputTagPressed(const FGameplayTag& 
 
 void UModularAbilitySystemComponent::AbilityInputTagReleased(const FGameplayTag& InputTag)
 {
+	if (UModularGameplayAbilitiesSettings::IsUsingExperimentalInput())
+	{
+		checkf(false, TEXT("UModularGameplayAbilitiesSettings::IsUsingExperimentalInput() is enabled. Please use the new input system instead of the old one."));
+	}
+	
 	if (!InputTag.IsValid())
 	{
 		return;
@@ -547,6 +726,69 @@ void UModularAbilitySystemComponent::AbilityInputTagReleased(const FGameplayTag&
 #else
 		if (Spec.Ability && Spec.DynamicAbilityTags.HasTagExact(InputTag))
 #endif
+		{
+			InputHeldHandles.Remove(Spec.Handle);
+			InputReleasedHandles.AddUnique(Spec.Handle);
+		}
+	}
+}
+
+void UModularAbilitySystemComponent::AbilityInputIdPressed(int32 InputId)
+{
+	if (UModularGameplayAbilitiesSettings::IsNotUsingExperimentalInput())
+	{
+		checkf(false, TEXT("UModularGameplayAbilitiesSettings::IsUsingExperimentalInput() is disabled. Please use the old input system instead of the new one."));
+	}
+
+	if (InputId == INDEX_NONE)
+	{
+		return;
+	}
+
+	for (const FGameplayAbilitySpec& Spec : ActivatableAbilities.Items)
+	{
+		if (Spec.Ability && Spec.InputID == InputId)
+		{
+			UModularGameplayAbility* CDO = Cast<UModularGameplayAbility>(Spec.Ability);
+			if (CDO == nullptr)
+			{
+				continue;
+			}
+
+			if ((CDO->GetActivationPolicy() != EGameplayAbilityActivationPolicy::Active) &&
+				!CDO->IsForceReceiveInput())
+			{
+				continue;
+			}
+
+			// If the ability is already held, don't add it again
+			// Otherwise the ability will keep activating
+			if (InputHeldHandles.Contains(Spec.Handle))
+			{
+				continue;
+			}
+
+			InputPressedHandles.AddUnique(Spec.Handle);
+			InputHeldHandles.AddUnique(Spec.Handle);
+		}
+	}
+}
+
+void UModularAbilitySystemComponent::AbilityInputIdReleased(int32 InputId)
+{
+	if (UModularGameplayAbilitiesSettings::IsNotUsingExperimentalInput())
+	{
+		checkf(false, TEXT("UModularGameplayAbilitiesSettings::IsUsingExperimentalInput() is disabled. Please use the old input system instead of the new one."));
+	}
+
+	if (InputId == INDEX_NONE)
+	{
+		return;
+	}
+
+	for (const FGameplayAbilitySpec& Spec : ActivatableAbilities.Items)
+	{
+		if (Spec.Ability && Spec.InputID == InputId)
 		{
 			InputHeldHandles.Remove(Spec.Handle);
 			InputReleasedHandles.AddUnique(Spec.Handle);

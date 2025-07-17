@@ -33,6 +33,9 @@ public:
 	
 	void AbilityInputTagPressed(const FGameplayTag& InputTag);
 	void AbilityInputTagReleased(const FGameplayTag& InputTag);
+	
+	void AbilityInputIdPressed(int32 InputId);
+	void AbilityInputIdReleased(int32 InputId);
 
 	void ProcessAbilityInput(float DeltaTime, bool bGamePaused);
 	void ClearAbilityInput();
@@ -88,9 +91,29 @@ public:
 	UFUNCTION(BlueprintCallable, Category = Tracking)
 	FGameplayAbilitySpecHandle GetTrackedActorsForAbility(const UGameplayAbility* Ability, TArray<FAbilityTrackedActorEntry>& OutTrackedActors) const;
 
+	/** Returns the number of tracked actors for a specified ability. */
+	UFUNCTION(BlueprintCallable, Category = Tracking)
+	int32 GetNumTrackedActorsForAbility(const UGameplayAbility* Ability) const;
+
+	/** Starts tracking the specified actor for the given ability. */
+	UFUNCTION(BlueprintCallable, Category = Tracking)
+	bool StartTrackingActorForAbility(AActor* ActorToTrack, const UGameplayAbility* Ability);
+
+	/** Starts tracking the specified actor for the given ability with a group tag. */
+	UFUNCTION(BlueprintCallable, Category = Tracking)
+	bool StartTrackingActorsForTag(AActor* ActorToTrack, const FGameplayTag& GroupTag);
+
 	/** Returns all tracked actors for a specified tag. */
 	UFUNCTION(BlueprintCallable, Category = Tracking)
 	void GetTrackedActorsForTag(const FGameplayTag& Tag, TArray<FAbilityTrackedActorEntry>& OutTrackedActors) const;
+
+	/** Clears all tracked actors for the specified group tag. */
+	UFUNCTION(BlueprintCallable, Category = Tracking)
+	void ClearTrackedGroupedActors(FGameplayTag GroupTag, bool bDestroyActors = false);
+
+	/** Clears all tracked actors for the specified ability. */
+	UFUNCTION(BlueprintCallable, Category = Tracking)
+	void ClearTrackedActorsForAbility(const UGameplayAbility* Ability, bool bDestroyActors = false);
 
 public:
 	//~ Begin UAbilitySystemComponent Interface

@@ -20,7 +20,11 @@ void UAbilityTask_TakePlayerSnapshot::RestoreSnapshot()
 	for (const auto& Pair : CachedAbilities)
 	{
 		FGameplayAbilitySpec Spec(Pair.Key, 1, INDEX_NONE, Ability->GetOwningActorFromActorInfo());
+#if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION <= 4
 		Spec.DynamicAbilityTags.AppendTags(Pair.Value);
+#else
+		Spec.GetDynamicSpecSourceTags().AppendTags(Pair.Value);
+#endif
 
 		AbilitySystemComponent->GiveAbility(Spec);
 
@@ -111,13 +115,19 @@ void UAbilityTask_TakePlayerSnapshot::Activate()
 		{
 			continue;
 		}
-		
+
+#if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION <= 4
 		if (AbilityQueryToRun.Matches(Spec.Ability->AbilityTags))
+#else
+		if (AbilityQueryToRun.Matches(Spec.Ability->GetAssetTags()))
+#endif
 		{
 			// Cache ability class and dynamic tags to restore them later
-			CachedAbilities.Add(
-				Spec.Ability->GetClass(),
-				Spec.DynamicAbilityTags);
+#if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION <= 4
+			CachedAbilities.Add(Spec.Ability->GetClass(), Spec.DynamicAbilityTags);
+#else
+			CachedAbilities.Add(Spec.Ability->GetClass(), Spec.GetDynamicSpecSourceTags());
+#endif
 
 			// We kinda check this twice, but it's not a big deal
 			if (bShouldClearCachedAbilities)

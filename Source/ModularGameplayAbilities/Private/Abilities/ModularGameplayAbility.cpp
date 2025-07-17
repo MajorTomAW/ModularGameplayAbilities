@@ -1,4 +1,4 @@
-// Copyright © 2024 MajorT. All Rights Reserved.
+// Author: Tom Werner (MajorT), 2025
 
 
 #include "Abilities/ModularGameplayAbility.h"
@@ -6,10 +6,12 @@
 #include "AbilitySystemBlueprintLibrary.h"
 #include "AbilitySystemGlobals.h"
 #include "AbilitySystemLog.h"
+#include "BrainComponent.h"
 #include "ModularAbilitySystemComponent.h"
 #include "Abilities/Costs/ModularAbilityCost.h"
 #include "GameFramework/PlayerState.h"
 #include "Misc/DataValidation.h"
+#include "Perception/AISense_Hearing.h"
 #include "Runtime/AIModule/Classes/AIController.h"
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(ModularGameplayAbility)
@@ -52,6 +54,8 @@ UModularGameplayAbility::UModularGameplayAbility(const FObjectInitializer& Objec
 	bStopsAIRVOAvoidance = false;
 	ActivationNoiseRange = 1000.f;
 	ActivationNoiseLoudness = 1.0f;
+
+	bAutoUntrackActorsOnEndAbility = true;
 
 	auto ImplementedInBlueprint = [] (const UFunction* Func) -> bool
 	{
@@ -195,7 +199,7 @@ TArray<AActor*> UModularGameplayAbility::GetTrackedActors() const
 
 	UModularAbilitySystemComponent* AbilitySystem =
 		Cast<UModularAbilitySystemComponent>(CurrentActorInfo->AbilitySystemComponent.Get());
-	if (!AbilitySystem)
+	if (!IsValid(AbilitySystem))
 	{
 		return TrackedActors;
 	}
@@ -206,19 +210,127 @@ TArray<AActor*> UModularGameplayAbility::GetTrackedActors() const
 		return TrackedActors;
 	}
 
-	if (const TArray<FAbilityTrackedActorEntry>* TrackedEntries =
-		AbilitySystem->AbilitySpecTrackedActors.Find(SpecHandle))
+	TArray<FAbilityTrackedActorEntry> TrackedEntries;
+	AbilitySystem->GetTrackedActorsForAbility(this, TrackedEntries);
+
+	for (const auto& Entry : TrackedEntries)
 	{
-		for (const auto& Entry : *TrackedEntries)
+		if (Entry.TrackedActor.IsValid())
 		{
-			if (Entry.TrackedActor.IsValid())
-			{
-				TrackedActors.Add(Entry.TrackedActor.Get());
-			}
+			TrackedActors.Add(Entry.TrackedActor.Get());
 		}
 	}
 
 	return TrackedActors;
+}
+
+TArray<AActor*> UModularGameplayAbility::GetTrackedGroupedActors(FGameplayTag GroupTag) const
+{
+	TArray<AActor*> TrackedActors;
+
+	if (!CurrentActorInfo || !IsInstantiated() || !GroupTag.IsValid())
+	{
+		return TrackedActors;
+	}
+
+	UModularAbilitySystemComponent* AbilitySystem =
+		Cast<UModularAbilitySystemComponent>(CurrentActorInfo->AbilitySystemComponent.Get());
+	if (!IsValid(AbilitySystem))
+	{
+		return TrackedActors;
+	}
+
+	TArray<FAbilityTrackedActorEntry> TrackedEntries;
+	AbilitySystem->GetTrackedActorsForTag(GroupTag, TrackedEntries);
+
+	for (const auto& Entry : TrackedEntries)
+	{
+		if (Entry.TrackedActor.IsValid())
+		{
+			TrackedActors.Add(Entry.TrackedActor.Get());
+		}
+	}
+
+	return TrackedActors;
+}
+
+bool UModularGameplayAbility::StartTrackingActor(AActor* ActorToTrack)
+{
+	if (!CurrentActorInfo || !IsInstantiated())
+	{
+		return false;
+	}
+
+	UModularAbilitySystemComponent* AbilitySystem =
+		Cast<UModularAbilitySystemComponent>(CurrentActorInfo->AbilitySystemComponent.Get());
+	if (!IsValid(AbilitySystem))
+	{
+		return false;
+	}
+
+	if (AbilitySystem->GetNumTrackedActorsForAbility(this) >= GetMaxNumTrackedActors())
+	{
+		return false;
+	}
+
+	return AbilitySystem->StartTrackingActorForAbility(ActorToTrack, this);
+}
+
+bool UModularGameplayAbility::StartTrackingActorWithGroup(AActor* ActorToTrack, FGameplayTag GroupTag)
+{
+	//@TODO: Non-instantiated abilities should not be able to track actors,
+	//@TODO: however for tag grouped actors we can allow it.
+
+	if (!GroupTag.IsValid())
+	{
+		return false;
+	}
+	
+	UModularAbilitySystemComponent* AbilitySystem =
+		Cast<UModularAbilitySystemComponent>(CurrentActorInfo->AbilitySystemComponent.Get());
+	if (!IsValid(AbilitySystem))
+	{
+		return false;
+	}
+	
+	return AbilitySystem->StartTrackingActorsForTag(ActorToTrack, GroupTag);
+}
+
+void UModularGameplayAbility::ClearTrackedActors(bool bDestroyActors)
+{
+	if (!CurrentActorInfo || !IsInstantiated())
+	{
+		return;
+	}
+
+	UModularAbilitySystemComponent* AbilitySystem =
+		Cast<UModularAbilitySystemComponent>(CurrentActorInfo->AbilitySystemComponent.Get());
+	if (!IsValid(AbilitySystem))
+	{
+		return;
+	}
+
+	AbilitySystem->ClearTrackedActorsForAbility(this, bDestroyActors);
+}
+
+void UModularGameplayAbility::ClearTrackedGroupedActors(FGameplayTag GroupTag, bool bDestroyActors)
+{
+	//@TODO: Non-instantiated abilities should not be able to track actors,
+	//@TODO: however for tag grouped actors we can allow it.
+
+	if (!GroupTag.IsValid())
+	{
+		return;
+	}
+	
+	UModularAbilitySystemComponent* AbilitySystem =
+		Cast<UModularAbilitySystemComponent>(CurrentActorInfo->AbilitySystemComponent.Get());
+	if (!IsValid(AbilitySystem))
+	{
+		return;
+	}
+
+	AbilitySystem->ClearTrackedGroupedActors(GroupTag, bDestroyActors);
 }
 
 void UModularGameplayAbility::TryActivateAbilityOnSpawn(const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilitySpec& Spec) const
@@ -301,6 +413,66 @@ bool UModularGameplayAbility::ShouldReceiveInputEvents() const
 	}
 
 	return bForceReceiveInput;
+}
+
+void UModularGameplayAbility::TriggerAIEventsOnActivate_Implementation(AAIController* OwningAIController)
+{
+	// Report noise event
+	static const FName NoiseEventTag = "ActivateAbility";
+	UAISense_Hearing::ReportNoiseEvent(
+		GetWorld(),
+		GetAvatarActorFromActorInfo()->GetActorLocation(),
+		ActivationNoiseLoudness,
+		GetAvatarActorFromActorInfo(),
+		ActivationNoiseRange,
+		NoiseEventTag);
+
+	if (IsValid(OwningAIController))
+	{
+		// Stop any movement
+		if (bStopsAIMovement)
+		{
+			OwningAIController->StopMovement();
+
+			//@TODO: Make an "Any Request Id" to pause any moves ??
+			//const FAIRequestID AnyRequestId = FAIRequestID::AnyRequest;
+			OwningAIController->PauseMove(FAIRequestID::AnyRequest);
+
+			// Remember to resume the movement later
+			bPausedAnyAIMovement = true;
+		}
+
+		// Stop AI logic that runs on the brain component
+		static const FString StopLogicReason = "Ability Activated";
+		UBrainComponent* Brain = OwningAIController->GetBrainComponent();
+		if (IsValid(Brain))
+		{
+			Brain->StopLogic(StopLogicReason);
+
+			// Remember to resume the logic later
+			bPausedAnyAIBehaviorLogic = true;
+		}
+	}
+}
+
+void UModularGameplayAbility::TriggerAIEventsOnDeactivate_Implementation(AAIController* OwningAIController)
+{
+	if (IsValid(OwningAIController))
+	{
+		// Resume any movement
+		if (bStopsAIMovement && bPausedAnyAIMovement)
+		{
+			OwningAIController->ResumeMove(FAIRequestID::AnyRequest);
+		}
+
+		// Resume AI logic that runs on the brain component
+		static const FString ResumeLogicReason = "Ability Deactivated";
+		UBrainComponent* Brain = OwningAIController->GetBrainComponent();
+		if (IsValid(Brain) && bPausedAnyAIBehaviorLogic)
+		{
+			Brain->ResumeLogic(ResumeLogicReason);
+		}
+	}
 }
 
 AAIController* UModularGameplayAbility::GetOwningAIController() const
@@ -431,6 +603,9 @@ void UModularGameplayAbility::ActivateAbility(const FGameplayAbilitySpecHandle H
 		
 		// For locally controlled players, immediately check for the input pressed flag
 		constexpr bool bShouldCheckImmediately = false;
+
+		//@TODO: Actually, we don't want to check immediately.
+		//@TODO: There might still be left-over data from the last activation which can cause weird behavior.
 		if (IsLocallyControlled() && bShouldCheckImmediately)
 		{
 			const FGameplayAbilitySpec* Spec = GetCurrentAbilitySpec();
@@ -474,6 +649,9 @@ void UModularGameplayAbility::ActivateAbility(const FGameplayAbilitySpecHandle H
 	}
 	
 	Super::ActivateAbility(Handle, ActorInfo, ActivationInfo, TriggerEventData);
+
+	// Trigger AI events on activation
+	TriggerAIEventsOnActivate(GetOwningAIController());
 }
 void UModularGameplayAbility::OnInputChangedCallback(bool bIsPressed)
 {
@@ -555,6 +733,15 @@ void UModularGameplayAbility::EndAbility(
 			ActivationInfo.GetActivationPredictionKey())
 		.RemoveAll(this);
 	}
+
+	// Remove any tracked actors if we should
+	if (bAutoUntrackActorsOnEndAbility)
+	{
+		ClearTrackedActors(false); //@TODO: Enforce false here?
+	}
+
+	// Trigger AI events on deactivation
+	TriggerAIEventsOnDeactivate(GetOwningAIController());
 	
 	Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);
 }
@@ -628,6 +815,8 @@ void UModularGameplayAbility::ApplyCost(
 	bool bAbilityHitTarget = false;
 	bool bHasDeterminedIfAbilityHitTarget = false;
 
+	// Please don't touch this, for some reason it doesn't work if I use TInstancedStruct wrapper.
+	// It is probably because of the way it gets serialized.
 	for (int i = 0; i < AbilityCosts.Num(); ++i)
 	{
 		if (!ensure(AbilityCosts.IsValidIndex(i)))
