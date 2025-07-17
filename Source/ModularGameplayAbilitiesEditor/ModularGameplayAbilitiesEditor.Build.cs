@@ -1,4 +1,4 @@
-﻿// Copyright © 2024 MajorT. All Rights Reserved.
+﻿// Author: Tom Werner (MajorT), 2025
 
 using UnrealBuildTool;
 
