@@ -12,11 +12,12 @@ Unreal Engine Plugin for extending the GAS in a Lyra-like manner.
 ## 🌐 〢 Index
 > 1. [Modular Gameplay Ability](#modular-gameplay-ability)  
 > &nbsp; 1.1 [Activation](#mga-activation)  
-> &nbsp; 1.2 [Failure Management](#mga-failure-management)  
-> &nbsp; 1.3 [(Explicit) Cooldowns](#mga-cooldowns)  
-> &nbsp; 1.4 [AI-Controlled Ability usage](#mga-ai-controlled)  
-> 2. [Lazy-Loading the ASC](#asc-lazyloading)
-<!--- > 3. [Installing the plugin](#installing) --->
+> &nbsp; 1.2 [Actor Tracking](#mga-actor-tracking)    
+> &nbsp; 1.3 [Failure Management](#mga-failure-management)  
+> &nbsp; 1.4 [(Explicit) Cooldowns](#mga-cooldowns)  
+> &nbsp; 1.5 [AI-Controlled Ability usage](#mga-ai-controlled)    
+> 2. [Lazy-Loading the ASC](#asc-lazyloading)  
+> 3. [Installing the plugin](#installing)  
 
 ---
 
@@ -29,20 +30,39 @@ The _[UModularGameplayAbilty](Source/ModularGameplayAbilities/Public/Abilities/M
 
 <a name="mga-activation"></a>  
 ### 📣 〢 Activation
-Gameplay Ability activation can happen in 3 different ways:  
+Gameplay Ability activation can happen in 3 different ways:
+
 | Activation Policy | Description |
 | -------- | ---------------- |
 | 1. Passive  |  Used for abilities that always apply gameplay effects and/or tags when being given to an ASC. (e.g. "On Spawn") |
 | 2. Triggered | Abilities that should be activated by a trigger (for example a GameplayEvent / Gameplay Message / etc.) |
 | 3. Active | Abilities that should explicitly be activated by player actions. (E.g. pressing an input key) |
   
-This will run through the default ability activation process but also checking for its Activation Group.
-Activation Groups are [...]
-| Activation Group | Description |
-| -------- | ---------------- |
-[...]
+This will run through the default ability activation process but also checking for its Activation Group.  
+The principle of Activation Groups is pretty much ported from Lyra.  
+
+On a high level, each ability can have its own activation group the defines its relationship to other abilities.
+
+| Activation Group        | Description                                                                                                                                                                                                 |
+|-------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Independent             | Usually the majority of your abilities will run independently from another. Meaning they don't care about the activation of other abilities.                                                                |
+| Exclusive (Replaceable) | Setting the Activation Group to "Exclusive (Replaceable) means there should only be one exclusive ability running at a time. **But** it can be canceled and replaced by other exclusive abilities.          |
+| Exclusive (Blocking)    | This does pretty much the same as the "Exclusive (Replaceable) Activation Group, however instead of getting canceled by others, this will actively **block** all other exclusive abilities from activating. |
+
+
+Potential usage of this could be:
+- **Independent**: Abilities that can be used at any time, e.g. ``Jump``, ``Crouch``.
+- **Exclusive (Replaceable)**: Abilities that can be replaced by others, e.g. ``Aim Down Sights``, ``Sprint``.
+- **Exclusive (Blocking)**: Abilities that should block others, e.g. ``Show Inventory``, ``Show Map``. (Only one at a time should be shown)
 
 ![image](https://github.com/user-attachments/assets/9dc85a1f-5803-4ff2-848c-0a28b6d88ae6)
+
+
+---
+
+<a name="mga-actor-tracking"></a>
+### 📣 〢 Actor Tracking
+[...]
 
 ---
 
