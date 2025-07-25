@@ -43,11 +43,11 @@ The principle of Activation Groups is pretty much ported from Lyra.
 
 On a high level, each ability can have its own activation group the defines its relationship to other abilities.
 
-| Activation Group        | Description                                                                                                                                                                                                 |
-|-------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Independent             | Usually the majority of your abilities will run independently from another. Meaning they don't care about the activation of other abilities.                                                                |
-| Exclusive (Replaceable) | Setting the Activation Group to "Exclusive (Replaceable) means there should only be one exclusive ability running at a time. **But** it can be canceled and replaced by other exclusive abilities.          |
-| Exclusive (Blocking)    | This does pretty much the same as the "Exclusive (Replaceable) Activation Group, however instead of getting canceled by others, this will actively **block** all other exclusive abilities from activating. |
+| Activation Group           | Description                                                                                                                                                                                                 |
+|----------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| 1. Independent             | Usually the majority of your abilities will run independently from another. Meaning they don't care about the activation of other abilities.                                                                |
+| 2. Exclusive (Replaceable) | Setting the Activation Group to "Exclusive (Replaceable) means there should only be one exclusive ability running at a time. **But** it can be canceled and replaced by other exclusive abilities.          |
+| 3. Exclusive (Blocking)    | This does pretty much the same as the "Exclusive (Replaceable) Activation Group, however instead of getting canceled by others, this will actively **block** all other exclusive abilities from activating. |
 
 
 Potential usage of this could be:
