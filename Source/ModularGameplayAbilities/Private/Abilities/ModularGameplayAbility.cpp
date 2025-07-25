@@ -41,6 +41,7 @@ UModularGameplayAbility::UModularGameplayAbility(const FObjectInitializer& Objec
 	ActivationGroup = EGameplayAbilityActivationGroup::Independent;
 	bActivateIfTagsAlreadyPresent =  false;
 	bForceReceiveInput = false;
+	bLogCancelation = false;
 	LastInputCallbackTime = 0.0f;
 
 	bStartWithCooldown = false;
@@ -115,6 +116,44 @@ AController* UModularGameplayAbility::GetControllerFromActorInfo() const
 		if (const APlayerState* PS = Cast<APlayerState>(TestActor))
 		{
 			return PS->GetOwningController();
+		}
+
+		TestActor = TestActor->GetOwner();
+	}
+
+	return nullptr;
+}
+
+APlayerState* UModularGameplayAbility::GetPlayerStateFromActorInfo() const
+{
+#if !ENGINE_VERSION_OLDER_5_4
+	ENSURE_ABILITY_IS_INSTANTIATED_OR_RETURN(GetControllerFromActorInfo, nullptr);
+#else
+	ensureMsgf(IsInstantiated(),
+		TEXT("%hs called on the CDO. NonInstanced abilities are deprecated, thus we always expect this to be called on an instanced object."), __func__);
+#endif
+
+	if (!ensure(CurrentActorInfo))
+	{
+		return nullptr;
+	}
+
+	if (APlayerState* PlayerState = Cast<APlayerState>(CurrentActorInfo->OwnerActor.Get()))
+	{
+		return PlayerState;
+	}
+
+	AActor* TestActor = CurrentActorInfo->OwnerActor.Get();
+	while (TestActor)
+	{
+		if (const AController* Controller = Cast<AController>(TestActor))
+		{
+			return Controller->GetPlayerState<APlayerState>();
+		}
+
+		if (const APawn* Pawn = Cast<APawn>(TestActor))
+		{
+			return Pawn->GetPlayerState<APlayerState>();
 		}
 
 		TestActor = TestActor->GetOwner();
@@ -417,15 +456,19 @@ bool UModularGameplayAbility::ShouldReceiveInputEvents() const
 
 void UModularGameplayAbility::TriggerAIEventsOnActivate_Implementation(AAIController* OwningAIController)
 {
-	// Report noise event
-	static const FName NoiseEventTag = "ActivateAbility";
-	UAISense_Hearing::ReportNoiseEvent(
-		GetWorld(),
-		GetAvatarActorFromActorInfo()->GetActorLocation(),
-		ActivationNoiseLoudness,
-		GetAvatarActorFromActorInfo(),
-		ActivationNoiseRange,
-		NoiseEventTag);
+	// Only report noise event if it makes sense (i.e., if loudness and range are anything above 0)
+	if (ActivationNoiseLoudness > 0.f && ActivationNoiseRange > 0.f)
+	{
+		static const FName NoiseEventTag = "AbilityActivated";
+		
+		UAISense_Hearing::ReportNoiseEvent(
+			GetWorld(),
+			GetAvatarActorFromActorInfo()->GetActorLocation(),
+			ActivationNoiseLoudness,
+			GetAvatarActorFromActorInfo(),
+			ActivationNoiseRange,
+			NoiseEventTag);	
+	}
 
 	if (IsValid(OwningAIController))
 	{
@@ -443,9 +486,9 @@ void UModularGameplayAbility::TriggerAIEventsOnActivate_Implementation(AAIContro
 		}
 
 		// Stop AI logic that runs on the brain component
-		static const FString StopLogicReason = "Ability Activated";
+		static const FString StopLogicReason = "Stopped by Ability";
 		UBrainComponent* Brain = OwningAIController->GetBrainComponent();
-		if (IsValid(Brain))
+		if (IsValid(Brain) && bStopsAIBehaviorLogic)
 		{
 			Brain->StopLogic(StopLogicReason);
 
@@ -746,6 +789,29 @@ void UModularGameplayAbility::EndAbility(
 	Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);
 }
 
+void UModularGameplayAbility::CancelAbility(
+	const FGameplayAbilitySpecHandle Handle,
+	const FGameplayAbilityActorInfo* ActorInfo,
+	const FGameplayAbilityActivationInfo ActivationInfo,
+	bool bReplicateCancelAbility)
+{
+#if !UE_BUILD_SHIPPING
+	if (bLogCancelation)
+	{
+		const bool bCanBeCanceled = CanBeCanceled();
+		EGameplayAbilityActivationGroup::Type GroupType = ActivationGroup;
+
+		ABILITY_LOG(Log, TEXT("Attempting to cancel ability '%s' (Handle: %s, Group: %s, CanBeCanceled: %s)"),
+			*GetName(),
+			*Handle.ToString(),
+			*UEnum::GetValueAsString(GroupType),
+			bCanBeCanceled ? TEXT("true") : TEXT("false"));
+	}
+#endif
+	
+	Super::CancelAbility(Handle, ActorInfo, ActivationInfo, bReplicateCancelAbility);
+}
+
 bool UModularGameplayAbility::CheckCost(
 	const FGameplayAbilitySpecHandle Handle,
 	const FGameplayAbilityActorInfo* ActorInfo,
@@ -1018,6 +1084,7 @@ const FGameplayTagContainer* UModularGameplayAbility::GetCooldownTags() const
 {
 	// Gosh, this really isn't thread safe, is it?
 	static FGameplayTagContainer LocalCooldownTags;
+	LocalCooldownTags.Reset();
 	if (UGameplayEffect* CDGE = GetCooldownGameplayEffect())
 	{
 		LocalCooldownTags.AppendTags(CDGE->GetGrantedTags());

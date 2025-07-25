@@ -127,6 +127,9 @@ public:
 	virtual void InitAbilityActorInfo(AActor* InOwnerActor, AActor* InAvatarActor) override;
 
 	virtual void ApplyAbilityBlockAndCancelTags(const FGameplayTagContainer& AbilityTags, UGameplayAbility* RequestingAbility, bool bEnableBlockTags, const FGameplayTagContainer& BlockTags, bool bExecuteCancelTags, const FGameplayTagContainer& CancelTags) override;
+
+	virtual void OnGiveAbility(FGameplayAbilitySpec& AbilitySpec) override;
+	virtual void OnRemoveAbility(FGameplayAbilitySpec& AbilitySpec) override;
 	//~ End UAbilitySystemComponent Interface
 
 protected:
@@ -147,4 +150,8 @@ public:
 
 	/** Currently tracked actors for each ability spec. */
 	TMap<FGameplayAbilitySpecHandle, TArray<FAbilityTrackedActorEntry>> AbilitySpecTrackedActors;
+
+	DECLARE_EVENT_OneParam(UModularAbilitySystemComponent, FOnAbilityAdded, UModularGameplayAbility*);
+	FOnAbilityAdded OnAbilityAddedEvent;
+	FOnAbilityAdded OnAbilityRemovedEvent;
 };

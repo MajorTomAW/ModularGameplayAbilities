@@ -548,6 +548,20 @@ void UModularAbilitySystemComponent::ApplyAbilityBlockAndCancelTags(
 	Super::ApplyAbilityBlockAndCancelTags(AbilityTags, RequestingAbility, bEnableBlockTags, BlockTagsCopy, bExecuteCancelTags, CancelTagsCopy);
 }
 
+void UModularAbilitySystemComponent::OnGiveAbility(FGameplayAbilitySpec& AbilitySpec)
+{
+	Super::OnGiveAbility(AbilitySpec);
+
+	OnAbilityAddedEvent.Broadcast(Cast<UModularGameplayAbility>(AbilitySpec.GetPrimaryInstance()));
+}
+
+void UModularAbilitySystemComponent::OnRemoveAbility(FGameplayAbilitySpec& AbilitySpec)
+{
+	Super::OnRemoveAbility(AbilitySpec);
+
+	OnAbilityRemovedEvent.Broadcast(Cast<UModularGameplayAbility>(AbilitySpec.GetPrimaryInstance()));
+}
+
 void UModularAbilitySystemComponent::TryActivateAbilitiesOnSpawn()
 {
 	ABILITYLIST_SCOPE_LOCK();

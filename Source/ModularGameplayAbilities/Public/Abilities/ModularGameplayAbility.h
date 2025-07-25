@@ -25,7 +25,7 @@ struct FModularAbilityCost;
  * Extended version of the UGameplayAbility
  * Adds more functionality and customization options in the context of activation, failure, etc.
  */
-UCLASS(Blueprintable, HideCategories = Input)
+UCLASS(Blueprintable, HideCategories = Input, PrioritizeCategories=(Activation, Display))
 class MODULARGAMEPLAYABILITIES_API UModularGameplayAbility
 	: public UGameplayAbility
 	, public IGameplayTagAssetInterface
@@ -50,9 +50,25 @@ public:
 	UFUNCTION(BlueprintCallable, Category = Ability)
 	AController* GetControllerFromActorInfo() const;
 
+	/** Returns the player state associated with this ability. May be null. */
+	UFUNCTION(BlueprintCallable, Category = Ability)
+	APlayerState* GetPlayerStateFromActorInfo() const;
+
 	/** Returns the avatar actor as a pawn. */
 	UFUNCTION(BlueprintCallable, Category = Ability)
 	APawn* GetAvatarAsPawn() const;
+
+	/** Returns the ability display name. */
+	UFUNCTION(BlueprintCallable, Category = Ability, BlueprintPure = true)
+	FText GetAbilityDisplayName() const { return DisplayName; }
+
+	/** Returns the ability description. */
+	UFUNCTION(BlueprintCallable, Category = Ability, BlueprintPure = true)
+	FText GetAbilityDescription() const { return Description; }
+
+	/** Returns the ability icon. */
+	UFUNCTION(BlueprintCallable, Category = Ability, BlueprintPure = true)
+	TSoftObjectPtr<UTexture2D> GetAbilityIcon() const { return AbilityIcon; }
 
 	// ----------------------------------------------------------------------------------------------------------------
 	//	Accessors
@@ -198,6 +214,7 @@ protected:
 	virtual void OnRemoveAbility(const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilitySpec& Spec) override;
 	virtual void ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData) override;
 	virtual void EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled) override;
+	virtual void CancelAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateCancelAbility) override;
 
 	virtual bool CheckCost(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, FGameplayTagContainer* OptionalRelevantTags = nullptr) const override;
 	virtual void ApplyCost(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo) const override;
@@ -299,6 +316,10 @@ protected:
 	/** If true, the ability will be activated automatically when activation required tags are already present. */
 	UPROPERTY(EditDefaultsOnly, Category = Activation, meta = (DisplayName = "Activate if Tags Already Present"))
 	uint8 bActivateIfTagsAlreadyPresent : 1;
+
+	/** If true, extra information should be logged when this ability is canceled. This is temporary, used for tracking a bug. */
+	UPROPERTY(EditDefaultsOnly, Category = Activation, AdvancedDisplay)
+	uint8 bLogCancelation : 1;
 
 	// ----------------------------------------------------------------------------------------------------------------
 	//	Actor Tracking
