@@ -51,8 +51,8 @@ On a high level, each ability can have its own activation group the defines its 
 
 
 Potential usage of this could be:
-- **Independent**: Abilities that can be used at any time, e.g. ``Jump``, ``Crouch``.
-- **Exclusive (Replaceable)**: Abilities that can be replaced by others, e.g. ``Aim Down Sights``, ``Sprint``.
+- **Independent**: Abilities that can be used at any time, e.g. ``Death``, ``Respawn``, ``Do A Thing``.
+- **Exclusive (Replaceable)**: Abilities that can be replaced by others, e.g. ``Aim Down Sights``, ``Sprint``, ``Crouch``.
 - **Exclusive (Blocking)**: Abilities that should block others, e.g. ``Show Inventory``, ``Show Map``. (Only one at a time should be shown)
 
 ![image](https://github.com/user-attachments/assets/9dc85a1f-5803-4ff2-848c-0a28b6d88ae6)
