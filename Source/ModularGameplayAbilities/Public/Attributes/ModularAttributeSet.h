@@ -58,23 +58,21 @@ DECLARE_MULTICAST_DELEGATE_SixParams(FGameplayAttributeEvent, AActor* /*EffectIn
 	GAMEPLAYATTRIBUTE_NOTIFY_OUT(PropertyName)														
 
 /** Lazy RepNotify macro for attribute properties */
-#define LAZY_ATTRIBUTE_REPNOTIFY(ClassName, PropertyName, OldValue)									\
-{																									\
-	static FProperty* ThisProperty = FindFieldChecked<FProperty>(ClassName::StaticClass(),			\
-		GET_MEMBER_NAME_CHECKED(ClassName, PropertyName));											\
-																									\
-	if (!GetOwningAbilitySystemComponent())															\
-	{																								\
-		if (AModularAbilityActor* AbilityActor = Cast<AModularAbilityActor>(GetOwningActor()))		\
-		{																							\
-			AbilityActor->SetPendingAttributeFromReplication(ThisProperty, OldValue);				\
-		}																							\
-	}																								\
-	else																							\
-	{																								\
-		GetOwningAbilitySystemComponentChecked()->SetBaseAttributeValueFromReplication(				\
-				FGameplayAttribute(ThisProperty), PropertyName, OldValue);							\
-	}																								\
+#define LAZY_ATTRIBUTE_REPNOTIFY(ClassName, PropertyName, OldValue)\
+{\
+	static FProperty* ThisProperty = FindFieldChecked<FProperty>(ClassName::StaticClass(),GET_MEMBER_NAME_CHECKED(ClassName, PropertyName));\
+	if (!GetOwningAbilitySystemComponent())\
+	{\
+		if (IPendingAttributeReceiver* Receiver = Cast<IPendingAttributeReceiver>(GetOwningActor()))\
+		{\
+			Receiver->SetPendingAttributeFromReplication(FGameplayAttribute(ThisProperty), PropertyName);\
+		}\
+	}\
+	else\
+	{\
+		GetOwningAbilitySystemComponentChecked()->SetBaseAttributeValueFromReplication(\
+				FGameplayAttribute(ThisProperty), PropertyName, OldValue);\
+	}\
 }
 
 /**
