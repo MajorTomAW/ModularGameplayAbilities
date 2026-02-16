@@ -919,7 +919,7 @@ void UModularAbilitySystemComponent::DeferredSetBaseAttributeValueFromReplicatio
 {
 	const float OldValue = ActiveGameplayEffects.GetAttributeBaseValue(Attribute);
 	ActiveGameplayEffects.SetAttributeBaseValue(Attribute, NewValue);
-	SetBaseAttributeValueFromReplication(Attribute, OldValue, NewValue);
+	SetBaseAttributeValueFromReplication(Attribute, NewValue, OldValue);
 }
 void UModularAbilitySystemComponent::DeferredSetBaseAttributeValueFromReplication(
 	const FGameplayAttribute& Attribute, FGameplayAttributeData NewValue)
