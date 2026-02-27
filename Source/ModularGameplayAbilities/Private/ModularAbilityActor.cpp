@@ -27,7 +27,7 @@ void AModularAbilityActor::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&
 	FDoRepLifetimeParams Params;
 	Params.bIsPushBased = true;
 
-	DOREPLIFETIME_WITH_PARAMS_FAST(ThisClass, TransientAbilitySystem, Params);
+	DOREPLIFETIME_WITH_PARAMS_FAST(ThisClass, TransientAbilitySystem, Params)
 }
 
 void AModularAbilityActor::PreInitializeComponents()
@@ -37,7 +37,8 @@ void AModularAbilityActor::PreInitializeComponents()
 	if ((CreationPolicy == EModularAbilitySystemCreationPolicy::Always) &&
 		(GetNetMode() != NM_Client))
 	{
-		check(!AbilitySystemComponent);
+		check(!AbilitySystemComponent)
+
 		CreateAbilitySystemComponent();
 		InitializeAbilitySystem();
 		ForceNetUpdate();
@@ -52,14 +53,14 @@ void AModularAbilityActor::PreReplication(IRepChangedPropertyTracker& ChangedPro
 		(AbilitySystemComponent) &&
 		(CreationPolicy != EModularAbilitySystemCreationPolicy::Never))
 	{
-		MARK_PROPERTY_DIRTY_FROM_NAME(ThisClass, TransientAbilitySystem, this);
+		MARK_PROPERTY_DIRTY_FROM_NAME(ThisClass, TransientAbilitySystem, this)
 		TransientAbilitySystem = AbilitySystemComponent;
 	}
 }
 
 void AModularAbilityActor::InitializeAbilitySystem()
 {
-	check(AbilitySystemComponent);
+	check(AbilitySystemComponent)
 	AbilitySystemComponent->InitAbilityActorInfo(this, this);
 	OnAbilitySystemInitialized();
 }
@@ -71,7 +72,7 @@ void AModularAbilityActor::SetPendingAttributeFromReplication(const FGameplayAtt
 
 void AModularAbilityActor::ApplyPendingAttributeReplications()
 {
-	check(AbilitySystemComponent);
+	check(AbilitySystemComponent)
 
 	// If there are no pending attribute replications, we don't need to do anything
 	if (PendingAttributeReplications.Num() <= 0)

@@ -25,37 +25,37 @@ struct FGameplayEffectSpec;
  */
 DECLARE_MULTICAST_DELEGATE_SixParams(FGameplayAttributeEvent, AActor* /*EffectInstigator*/, AActor* /*EffectCauser*/, const FGameplayEffectSpec* /*EffectSpec*/, float /*EffectMagnitude*/, float /*OldValue*/, float /*NewValue*/);
 
-#define GAMEPLAYATTRIBUTE_NOTIFY(PropertyName)														\
-	mutable FGameplayAttributeEvent On##PropertyName##Changed;										\
+#define GAMEPLAYATTRIBUTE_NOTIFY(PropertyName)\
+	mutable FGameplayAttributeEvent On##PropertyName##Changed;\
 	float Cached##PropertyName##BeforeAttributeChange;
 
-#define GAMEPLAYATTRIBUTE_NOTIFY_OUT(PropertyName)													\
-	mutable FGameplayAttributeEvent OnOutOf##PropertyName;											\
+#define GAMEPLAYATTRIBUTE_NOTIFY_OUT(PropertyName)\
+	mutable FGameplayAttributeEvent OnOutOf##PropertyName;\
 	bool bOutOf##PropertyName;
 
 /** Accessor macro for attribute properties */
-#define ATTRIBUTE_ACCESSORS(ClassName, PropertyName)												\
-	GAMEPLAYATTRIBUTE_PROPERTY_GETTER(ClassName, PropertyName)										\
-	GAMEPLAYATTRIBUTE_VALUE_GETTER(PropertyName)													\
-	GAMEPLAYATTRIBUTE_VALUE_SETTER(PropertyName)													\
-	GAMEPLAYATTRIBUTE_VALUE_INITTER(PropertyName)																								
+#define ATTRIBUTE_ACCESSORS(ClassName, PropertyName)\
+	GAMEPLAYATTRIBUTE_PROPERTY_GETTER(ClassName, PropertyName)\
+	GAMEPLAYATTRIBUTE_VALUE_GETTER(PropertyName)\
+	GAMEPLAYATTRIBUTE_VALUE_SETTER(PropertyName)\
+	GAMEPLAYATTRIBUTE_VALUE_INITTER(PropertyName)
 
 /** Accessor macro for attribute properties with notify delegate */
-#define ATTRIBUTE_ACCESSORS_NOTIFY(ClassName, PropertyName)											\
-	GAMEPLAYATTRIBUTE_PROPERTY_GETTER(ClassName, PropertyName)										\
-	GAMEPLAYATTRIBUTE_VALUE_GETTER(PropertyName)													\
-	GAMEPLAYATTRIBUTE_VALUE_SETTER(PropertyName)													\
-	GAMEPLAYATTRIBUTE_VALUE_INITTER(PropertyName)													\
-	GAMEPLAYATTRIBUTE_NOTIFY(PropertyName)															
+#define ATTRIBUTE_ACCESSORS_NOTIFY(ClassName, PropertyName)\
+	GAMEPLAYATTRIBUTE_PROPERTY_GETTER(ClassName, PropertyName)\
+	GAMEPLAYATTRIBUTE_VALUE_GETTER(PropertyName)\
+	GAMEPLAYATTRIBUTE_VALUE_SETTER(PropertyName)\
+	GAMEPLAYATTRIBUTE_VALUE_INITTER(PropertyName)\
+	GAMEPLAYATTRIBUTE_NOTIFY(PropertyName)
 
-/** Accessor macro for attribute properties with notify delegate and out of bounds delegate */
-#define ATTRIBUTE_ACCESSORS_NOTIFY_DEPLETED(ClassName, PropertyName)								\
-	GAMEPLAYATTRIBUTE_PROPERTY_GETTER(ClassName, PropertyName)										\
-	GAMEPLAYATTRIBUTE_VALUE_GETTER(PropertyName)													\
-	GAMEPLAYATTRIBUTE_VALUE_SETTER(PropertyName)													\
-	GAMEPLAYATTRIBUTE_VALUE_INITTER(PropertyName)													\
-	GAMEPLAYATTRIBUTE_NOTIFY(PropertyName)															\
-	GAMEPLAYATTRIBUTE_NOTIFY_OUT(PropertyName)														
+/** Accessor macro for attribute properties with notify delegate and out-of-bounds delegate */
+#define ATTRIBUTE_ACCESSORS_NOTIFY_DEPLETED(ClassName, PropertyName)\
+	GAMEPLAYATTRIBUTE_PROPERTY_GETTER(ClassName, PropertyName)\
+	GAMEPLAYATTRIBUTE_VALUE_GETTER(PropertyName)\
+	GAMEPLAYATTRIBUTE_VALUE_SETTER(PropertyName)\
+	GAMEPLAYATTRIBUTE_VALUE_INITTER(PropertyName)\
+	GAMEPLAYATTRIBUTE_NOTIFY(PropertyName)\
+	GAMEPLAYATTRIBUTE_NOTIFY_OUT(PropertyName)
 
 /** Lazy RepNotify macro for attribute properties */
 #define LAZY_ATTRIBUTE_REPNOTIFY(ClassName, PropertyName, OldValue)\

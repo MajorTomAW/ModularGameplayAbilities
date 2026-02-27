@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "AbilitySystemInterface.h"
 #include "AttributeSet.h"
+#include "Attributes/IPendingAttributeReceiver.h"
 #include "GameFramework/Actor.h"
 
 #include "ModularAbilityActor.generated.h"
@@ -21,35 +22,26 @@ namespace EModularAbilitySystemCreationPolicy
 {
 	enum Type : int
 	{
-		/** The Ability System will always be null on the client. */
+		/** Never create a component. */
 		Never,
 
-		/** The Ability System will be null on the client until it is used on the server. */
+		/** Create a component when it is first accessed. Client-side access of the ability system component before it is created and replicated will return nullptr. */
 		Lazy,
 
-		/** The Ability System is always loaded whenever the owning actor is loaded. */
+		/** Always a component when this actor is created. More efficient for actors where you know it will always need one. */
 		Always,
 	};
 }
-
-/** A pending attribute replication */
-struct FPendingAttributeReplication
-{
-public:
-	FPendingAttributeReplication() = default;
-	FPendingAttributeReplication(const FGameplayAttribute& InAttribute, const FGameplayAttributeData& InNewValue)
-		: Attribute(InAttribute), NewValue(InNewValue) {}
-
-	FGameplayAttribute Attribute;
-	FGameplayAttributeData NewValue;
-};
 
 /**
  * A base class for all actors that are meant to use the Ability System.
  * It provides a way to lazy-load the Ability System for optimal performance.
  */
 UCLASS(Blueprintable, BlueprintType, Abstract, meta = (ShortTooltip = "Base class for all Ability Actors that support lazy loading of Ability System."))
-class MODULARGAMEPLAYABILITIES_API AModularAbilityActor : public AActor, public IAbilitySystemInterface
+class MODULARGAMEPLAYABILITIES_API AModularAbilityActor
+	: public AActor
+	, public IAbilitySystemInterface
+	, public IPendingAttributeReceiver
 {
 	GENERATED_BODY()
 
@@ -72,7 +64,7 @@ public:
 	virtual void OnAbilitySystemInitialized() {}
 
 	/** Called to update any pending attributes that were set before the Ability System was initialized. */
-	virtual void SetPendingAttributeFromReplication(const FGameplayAttribute& Attribute, const FGameplayAttributeData& NewValue);
+	virtual void SetPendingAttributeFromReplication(const FGameplayAttribute& Attribute, const FGameplayAttributeData& NewValue) override;
 
 	/** Called to apply any pending attribute replications that were set before the Ability System was initialized. */
 	virtual void ApplyPendingAttributeReplications();
