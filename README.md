@@ -20,11 +20,13 @@ Therefore, my aim was to provide a base GAS setup, that can be used for (almost)
 > &nbsp; 1.1 [Activation](#mga-activation)<br>
 > &nbsp; 1.2 [Ability Input](#mga-ability-input)<br>
 > &nbsp; 1.3 [(Explicit) Cooldowns](#mga-cooldowns)<br>
-> &nbsp; 1.4 [AI-Controlled Ability usage](#mga-ai-controlled)
+> &nbsp; 1.4 [AI-Controlled Ability usage](#mga-ai-controlled)<br>
+> &nbsp; 1.5 [Utilies](#mga-utilies)<br>
 > 2. [Modular Ability System Component](#modular-asc)<br>
-> &nbsp; 2.1 [Lazy-Loading the ASC](#asc-lazyloading)
-> 3. [Modular Attribute Set](#modular-attribute-set)
-> 3. [Ability Tasks](#ability-tasks)
+> &nbsp; 2.1 [Lazy-Loading the ASC](#asc-lazyloading)<br>
+> 3. [Ability Set](#ability-set)<br>
+> 4. [Modular Attribute Set](#modular-attribute-set)<br>
+> 5. [Ability Tasks](#ability-tasks)
 > 100. [Installing the plugin](#installing)
 
 <!-- &nbsp; 1.2 [Actor Tracking](#mga-actor-tracking)<br>
@@ -54,7 +56,7 @@ Gameplay Ability activation can happen in 3 different ways:
 
 ![image](https://github.com/user-attachments/assets/f7fafb5b-391c-48c4-a790-bc81c6752c6c)
 
-Read more about abilit yinput [here](#mga-ability-input)
+Read more about ability input [here](#mga-ability-input)
 
 This will run through the default ability activation process but also checking for its Activation Group.
 The principle of Activation Groups is pretty much ported from Lyra.
@@ -147,15 +149,58 @@ Further AI Events can be implemented by overriding ``TriggerAIEventsOnActivate/D
 
 ---
 
+<a name="mga-utilities"></a>
+### Utilities
+
+These are a few utility functions I also added to the ability class. Though, I feel like they should be come with the ``UGameplayAbility`` by default...
+
+#### General Utility
+![image](https://github.com/user-attachments/assets/2f07de6e-a87e-4f52-a092-8c85ee9fb7e5)
+
+#### AI Utility
+![image](https://github.com/user-attachments/assets/9246f7a3-eb6d-4428-88f4-5d92ad1f4e2e)
+
+---
+
+<a name="modular-asc"></a>
+## Modular Ability System Component
+The _[UModularAbilitySystemComponent](Source/ModularGameplayAbilities/Public/ModularAbilitySystemComponent.h)_ is pretty much the same as in Lyra.<br>
+Featuring a way to activate abilities based on gameplay tags or input id.<br>
+Read more about activating abilities via input [here](#ability-set)
+
+
+---
+
 <a name="asc-lazyloading"></a>
-## 2. Lazy-Loading the ASC
-The _[AModularAbilityActor](Source/ModularGameplayAbilities/Public/ModularAbilityActor.h)_ provides logic for an actor that is meant to use the Ability System.
+### Lazy-Loading the ASC
+The _[AModularAbilityActor](Source/ModularGameplayAbilities/Public/ModularAbilityActor.h)_ is an example actor, that provides logic for an actor that is meant to use the Ability System.
 Thus setting up an example of how to lazy-load the Ability System and manage pending attribute modifiers for optimal performance.
-[...]
 
-![image](https://github.com/user-attachments/assets/2557c7a8-4154-44ea-816b-87c760f965f5)
+#### How it works
+The idea is, that these kind of actors will only create the Ability System, when first accessed.<br>
+Meaning their Ability System gets only created on demand.<br>
 
-[Credit (Vorixo)](https://vorixo.github.io/devtricks/lazy-loading-asc/)
+Each actor can become a "lazy ability actor" by implementing the _[IPendingAttributeReceiver](Source/ModularGameplayAbilities/Public/Attributes/IPendingAttributeReceiver.h)_ interface.<br>
+```cpp
+class IPendingAttributeReceiver
+{
+	GENERATED_BODY()
+
+public:
+	/** Called to update any pending attributes that were set before the Ability System was initialized. */
+	virtual void SetPendingAttributeFromReplication(const FGameplayAttribute& Attribute, const FGameplayAttributeData& NewValue) = 0;
+};
+```
+Whenever an OnRep_SomeAttributeName gets triggered inside your AttributeSet, you would call the new ``LAZY_ATTRIBUTE_REPNOTIFY`` (@see [Attribute Set](#modular-attribute-set)) instead of the old ``GAMEPLAYATTRIBUTE_REPNOTIFY`` which will add the pending attribute from replication to the owning actor.<br>
+When the Ability System got created, you would then apply those pending attributes.<br>
+
+To see how one would do that, take a look at the _[AModularAbilityActor](Source/ModularGameplayAbilities/Public/ModularAbilityActor.h)_.
+
+![image](httpshttps://github.com/user-attachments/assets/1f017338-4eeb-49f3-a155-77e739cb44df)
+
+> Thanks to:
+> - [Vorixo](https://vorixo.github.io/devtricks/lazy-loading-asc/)
+> - Epic Games, Inc.
 
 ---
 
