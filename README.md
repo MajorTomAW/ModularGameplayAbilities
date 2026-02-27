@@ -18,10 +18,11 @@ Therefore, my aim was to provide a base GAS setup, that can be used for (almost)
 ## Index
 > 1. [Modular Gameplay Ability](#modular-gameplay-ability)<br>
 > &nbsp; 1.1 [Activation](#mga-activation)<br>
-> &nbsp; 1.2 [Actor Tracking](#mga-actor-tracking)<br>
-> &nbsp; 1.3 [Failure Management](#mga-failure-management)<br>
-> &nbsp; 1.4 [(Explicit) Cooldowns](#mga-cooldowns)<br>
-> &nbsp; 1.5 [AI-Controlled Ability usage](#mga-ai-controlled)
+<!--> &nbsp; 1.2 [Actor Tracking](#mga-actor-tracking)<br>
+> &nbsp; 1.3 [Failure Management](#mga-failure-management)<br>-->
+> &nbsp; 1.2 [Ability Input](#mga-ability-input)<br>
+> &nbsp; 1.3 [(Explicit) Cooldowns](#mga-cooldowns)<br>
+> &nbsp; 1.4 [AI-Controlled Ability usage](#mga-ai-controlled)
 > 2. [Modular Ability System Component](#modular-asc)<br>
 > &nbsp; 2.1 [Lazy-Loading the ASC](#asc-lazyloading)
 > 3. [Modular Attribute Set](#modular-attribute-set)
@@ -79,7 +80,7 @@ Potential usage of this could be:
 ### Ability Input
 
 For convenience, the ``UModularGameplayAbility`` comes with built-in "input released/pressed" methods,<br>
-which will be triggereged according to the ability's ``Activation Policy``.<br>
+which will be triggered according to the ability's ``Activation Policy``.<br>
 Both native and blueprint versions.
 ```cpp
 virtual void OnAbilityInputPressed(float TimeWaited);
@@ -123,12 +124,25 @@ Therefore, allowing you to share the same Cooldown Gameplay Effect with multiple
 ---
 
 <a name="mga-ai-controlled"></a>
-### 📣 〢 AI-Controlled Ability usage
-As Gameplay Abilities are also able to be activated by bot-controlled pawns, the ModularGameplayAbility provides further logic modifying the AI's behavior.
-E.g. during the Ability activation, if instigated by an AI, it will stop any Behavior Logic / AI Movement / RVO Avoidance / ...
-[...]
+### AI-Controlled Ability usage
+As Gameplay Abilities are also able to be activated by bot-controlled pawns, the ``UModularGameplayAbility`` provides further logic modifying the AI's behavior.<br>
+E.g. during the Ability activation, if instigated by an AI, it will stop any Behavior Logic / AI Movement / RVO Avoidance / ... <br>
+To enable those "AI Events", you need to check the ``TriggerAIEvents`` property.
 
-![image](https://github.com/user-attachments/assets/95e978ba-3f17-44fb-9698-0b92750332dd)
+![image](https://github.com/user-attachments/assets/2005f113-5dca-46bd-ba86-90e67a74c0f4)
+
+By default, the following AI events are implemented:
+| Property | Description |
+| -------- | ---------------- |
+| Stops AI Behavior Logic | Stops AI Behavior logic until the abilit is finished/aborted. |
+| Stops AI Movement | Will pause the current AI move until the ability is finished/aborted. |
+| Stops AI RVO Avoidance | Not implemented yet |
+| Activation Noise Range | When greater 0, will report a Noise event to the ``UAISense_Hearing`` sense, using the provided Range as radius and the ``Activation Noise Loudness`` as Loudness. |
+| Impact Noise Range | Not implement yet |
+| Activation Noise Loudness | @see ``Activation Noise Range`` |
+
+Further AI Events can be implemented by overriding ``TriggerAIEventsOnActivate/Deactivate`` in either C++ or BP.<br>
+![image](https://github.com/user-attachments/assets/217db4c5-892f-447d-b602-dcac7759110c)
 
 ---
 
