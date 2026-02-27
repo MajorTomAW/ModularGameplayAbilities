@@ -1,21 +1,21 @@
 // Author: Tom Werner (MajorT), 2025
 
 
-#include "Abilities/TargetData/GameplayAbilityTargetData_CursorRadius.h"
+#include "Abilities/TargetData/GameplayAbilityTargetActor_CursorRadius.h"
 
 #include "AbilitySystemLog.h"
 #include "Camera/CameraComponent.h"
 #include "Engine/OverlapResult.h"
 
 
-AGameplayAbilityTargetData_CursorRadius::AGameplayAbilityTargetData_CursorRadius()
+AGameplayAbilityTargetActor_CursorRadius::AGameplayAbilityTargetActor_CursorRadius()
 {
 	ShouldProduceTargetDataOnServer = true;
 	Radius = 0.f;
 }
 
 
-void AGameplayAbilityTargetData_CursorRadius::ConfirmTargetingAndContinue()
+void AGameplayAbilityTargetActor_CursorRadius::ConfirmTargetingAndContinue()
 {
 	check(ShouldProduceTargetData());
 	if (SourceActor)
@@ -26,7 +26,7 @@ void AGameplayAbilityTargetData_CursorRadius::ConfirmTargetingAndContinue()
 	}
 }
 
-FHitResult AGameplayAbilityTargetData_CursorRadius::PerformTrace(AActor* InSourceActor)
+/*FHitResult AGameplayAbilityTargetActor_CursorRadius::PerformTrace(AActor* InSourceActor)
 {
 	bool bTraceComplex = false;
 	TArray ActorsToIgnore = { InSourceActor };
@@ -34,7 +34,7 @@ FHitResult AGameplayAbilityTargetData_CursorRadius::PerformTrace(AActor* InSourc
 	FCollisionQueryParams Params(SCENE_QUERY_STAT(AGameplayAbilityTargetActor_CursorTrace), bTraceComplex);
 	Params.bReturnPhysicalMaterial = true;
 	Params.AddIgnoredActors(ActorsToIgnore);
-	
+
 	FVector TraceStart = StartLocation.GetTargetingTransform().GetLocation();
 
 	// Bruh, this is a bit of a hack, but we need to check if the source actor is a camera
@@ -45,7 +45,7 @@ FHitResult AGameplayAbilityTargetData_CursorRadius::PerformTrace(AActor* InSourc
 			TraceStart = Camera->GetComponentTransform().GetLocation();
 		}
 	}
-	
+
 	FVector TraceEnd;
 	AimWithCursor(InSourceActor, Params, TraceStart, TraceEnd);
 
@@ -59,7 +59,7 @@ FHitResult AGameplayAbilityTargetData_CursorRadius::PerformTrace(AActor* InSourc
 	{
 		ReturnHitResult.Location = TraceEnd;
 	}
-	
+
 	LastHitResult = ReturnHitResult;
 
 	if (AGameplayAbilityWorldReticle* LocalReticleActor = ReticleActor.Get())
@@ -68,12 +68,12 @@ FHitResult AGameplayAbilityTargetData_CursorRadius::PerformTrace(AActor* InSourc
 	}
 
 	return ReturnHitResult;
-}
+}*/
 
-TArray<TWeakObjectPtr<AActor>> AGameplayAbilityTargetData_CursorRadius::PerformOverlap(const FVector& Origin)
+TArray<TWeakObjectPtr<AActor>> AGameplayAbilityTargetActor_CursorRadius::PerformOverlap(const FVector& Origin)
 {
 	bool bTraceComplex = false;
-	
+
 	FCollisionQueryParams Params(SCENE_QUERY_STAT(RadiusTargetingOverlap), bTraceComplex);
 	Params.bReturnPhysicalMaterial = false;
 
@@ -108,7 +108,7 @@ TArray<TWeakObjectPtr<AActor>> AGameplayAbilityTargetData_CursorRadius::PerformO
 	return HitActors;
 }
 
-FGameplayAbilityTargetDataHandle AGameplayAbilityTargetData_CursorRadius::MakeTargetData(
+FGameplayAbilityTargetDataHandle AGameplayAbilityTargetActor_CursorRadius::MakeTargetData(
 	const TArray<TWeakObjectPtr<AActor>>& Actors,
 	const FVector& Origin) const
 {
