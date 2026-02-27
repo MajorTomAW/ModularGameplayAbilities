@@ -30,10 +30,10 @@ public:
 	void CancelAbilitiesByFunc(TShouldCancelAbilityFunc ShouldCancelFunc, bool bReplicateCancelAbility);
 
 	void CancelInputActivatedAbilities(bool bReplicateCancelAbility);
-	
+
 	void AbilityInputTagPressed(const FGameplayTag& InputTag);
 	void AbilityInputTagReleased(const FGameplayTag& InputTag);
-	
+
 	void AbilityInputIdPressed(int32 InputId);
 	void AbilityInputIdReleased(int32 InputId);
 
@@ -136,11 +136,11 @@ protected:
 	/** If set, this table is used to look up tag relationships for abilities. */
 	UPROPERTY()
 	TObjectPtr<UModularAbilityTagRelationshipMapping> TagRelationshipMapping;
-	
+
 	TArray<FGameplayAbilitySpecHandle> InputPressedHandles;		// Handles to abilities that input activated this frame
 	TArray<FGameplayAbilitySpecHandle> InputReleasedHandles;	// Handles to abilities that input released this frame
 	TArray<FGameplayAbilitySpecHandle> InputHeldHandles;		// Handles to abilities that are currently input held
-	
+
 	/** Cached number of abilities running in each activation group. */
 	int32 ActivationGroupCounts[static_cast<uint8>(EGameplayAbilityActivationGroup::MAX)];
 

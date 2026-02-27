@@ -17,18 +17,21 @@ UModularAbilitySystemComponent::UModularAbilitySystemComponent(const FObjectInit
 	InputHeldHandles.Reset();
 	InputPressedHandles.Reset();
 	InputReleasedHandles.Reset();
-	
+
 	FMemory::Memset(ActivationGroupCounts, 0 , sizeof(ActivationGroupCounts));
 }
 
 void UModularAbilitySystemComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	// Unregister from the global ability system
-	if (UModularAbilitySubsystem* AbilitySub = UModularAbilitySubsystem::Get(this))
+	if (UObjectInitialized() && IsValid(this))
 	{
-		AbilitySub->UnregisterAbilitySystem(this);
+		if (UModularAbilitySubsystem* AbilitySub = UModularAbilitySubsystem::Get(this))
+		{
+			AbilitySub->UnregisterAbilitySystem(this);
+		}
 	}
-	
+
 	Super::EndPlay(EndPlayReason);
 }
 
@@ -64,7 +67,7 @@ void UModularAbilitySystemComponent::AddAbilityToActivationGroup(
 {
 	check(Ability);
 	check(ActivationGroupCounts[(uint8)Group] < INT32_MAX);
-	
+
 	ActivationGroupCounts[(uint8)Group]++;
 
 	const bool bReplicateCancelAbility = false;
@@ -156,7 +159,7 @@ FGameplayAbilitySpecHandle UModularAbilitySystemComponent::GetTrackedActorsForAb
 	{
 		return FGameplayAbilitySpecHandle();
 	}
-	
+
 	UModularAbilitySystemComponent* AbilitySystem =
 		Cast<UModularAbilitySystemComponent>(Ability->GetCurrentActorInfo()->AbilitySystemComponent.Get());
 	if (!AbilitySystem)
@@ -197,7 +200,7 @@ int32 UModularAbilitySystemComponent::GetNumTrackedActorsForAbility(const UGamep
 	{
 		return 0;
 	}
-	
+
 	UModularAbilitySystemComponent* AbilitySystem =
 		Cast<UModularAbilitySystemComponent>(Ability->GetCurrentActorInfo()->AbilitySystemComponent.Get());
 	if (!IsValid(AbilitySystem))
@@ -233,7 +236,7 @@ bool UModularAbilitySystemComponent::StartTrackingActorForAbility(AActor* ActorT
 	{
 		return false;
 	}
-	
+
 	UModularAbilitySystemComponent* AbilitySystem =
 		Cast<UModularAbilitySystemComponent>(Ability->GetCurrentActorInfo()->AbilitySystemComponent.Get());
 	if (!IsValid(AbilitySystem))
@@ -280,7 +283,7 @@ void UModularAbilitySystemComponent::GetTrackedActorsForTag(
 	{
 		return;
 	}
-	
+
 	if (!TagTrackedActors.Contains(Tag))
 	{
 		return;
@@ -305,7 +308,7 @@ void UModularAbilitySystemComponent::ClearTrackedActorsForAbility(const UGamepla
 	{
 		return;
 	}
-	
+
 	UModularAbilitySystemComponent* AbilitySystem =
 		Cast<UModularAbilitySystemComponent>(Ability->GetCurrentActorInfo()->AbilitySystemComponent.Get());
 	if (!IsValid(AbilitySystem))
@@ -403,7 +406,7 @@ void UModularAbilitySystemComponent::AbilitySpecInputPressed(FGameplayAbilitySpe
 void UModularAbilitySystemComponent::AbilitySpecInputReleased(FGameplayAbilitySpec& Spec)
 {
 	Super::AbilitySpecInputReleased(Spec);
-	
+
 	// We don't support UGameplayAbility::bReplicateInputDirectly.
 	// Use replicated events instead so that the WaitInputRelease ability task works.
 	if (Spec.IsActive())
@@ -489,7 +492,7 @@ void UModularAbilitySystemComponent::InitAbilityActorInfo(AActor* InOwnerActor, 
 	check(InOwnerActor);
 
 	const bool bHasNewPawnAvatar = Cast<APawn>(InAvatarActor) && (InAvatarActor != ActorInfo->AvatarActor);
-	
+
 	Super::InitAbilityActorInfo(InOwnerActor, InAvatarActor);
 
 	if (!bHasNewPawnAvatar)
@@ -544,7 +547,7 @@ void UModularAbilitySystemComponent::ApplyAbilityBlockAndCancelTags(
 	{
 		TagRelationshipMapping->GetAbilityTagsToBlockAndCancel(AbilityTags, &BlockTagsCopy, &CancelTagsCopy);
 	}
-	
+
 	Super::ApplyAbilityBlockAndCancelTags(AbilityTags, RequestingAbility, bEnableBlockTags, BlockTagsCopy, bExecuteCancelTags, CancelTagsCopy);
 }
 
@@ -589,7 +592,7 @@ PRAGMA_DISABLE_DEPRECATION_WARNINGS
 
 			bAnyInstancesFound = Instances.Num() > 0;
 		}
-		
+
 		if (!bAnyInstancesFound)
 		{
 			AbilityCDO->TryActivateAbilityOnSpawn(AbilityActorInfo.Get(), Spec);
@@ -682,7 +685,7 @@ void UModularAbilitySystemComponent::AbilityInputTagPressed(const FGameplayTag& 
 	{
 		checkf(false, TEXT("UModularGameplayAbilitiesSettings::IsUsingExperimentalInput() is enabled. Please use the new input system instead of the old one."));
 	}
-	
+
 	if (!InputTag.IsValid())
 	{
 		return;
@@ -727,7 +730,7 @@ void UModularAbilitySystemComponent::AbilityInputTagReleased(const FGameplayTag&
 	{
 		checkf(false, TEXT("UModularGameplayAbilitiesSettings::IsUsingExperimentalInput() is enabled. Please use the new input system instead of the old one."));
 	}
-	
+
 	if (!InputTag.IsValid())
 	{
 		return;
@@ -817,7 +820,7 @@ void UModularAbilitySystemComponent::ProcessAbilityInput(float DeltaTime, bool b
 		ClearAbilityInput();
 		return;
 	}
-	
+
 	if (!IsAbilityInputAllowed())
 	{
 		ClearAbilityInput();
@@ -836,7 +839,7 @@ void UModularAbilitySystemComponent::ProcessAbilityInput(float DeltaTime, bool b
 			{
 				continue;
 			}
-			
+
 			const UModularGameplayAbility* CDO = Cast<UModularGameplayAbility>(Spec->Ability);
 			if (CDO && (CDO->GetActivationPolicy() == EGameplayAbilityActivationPolicy::Active) && CDO->IsForceReceiveInput())
 			{
@@ -880,7 +883,7 @@ void UModularAbilitySystemComponent::ProcessAbilityInput(float DeltaTime, bool b
 	{
 		bool bDidActivate = TryActivateAbility(Handle);
 
-		ABILITY_LOG(Display, TEXT("TryActivateAbility %s: %s"), *Handle.ToString(), bDidActivate ? TEXT("Success") : TEXT("Failed"));
+		ABILITY_LOG(VeryVerbose, TEXT("TryActivateAbility %s: %s"), *Handle.ToString(), bDidActivate ? TEXT("Success") : TEXT("Failed"));
 	}
 
 	// Process input for abilities that are released
