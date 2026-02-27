@@ -18,8 +18,6 @@ Therefore, my aim was to provide a base GAS setup, that can be used for (almost)
 ## Index
 > 1. [Modular Gameplay Ability](#modular-gameplay-ability)<br>
 > &nbsp; 1.1 [Activation](#mga-activation)<br>
-<!--> &nbsp; 1.2 [Actor Tracking](#mga-actor-tracking)<br>
-> &nbsp; 1.3 [Failure Management](#mga-failure-management)<br>-->
 > &nbsp; 1.2 [Ability Input](#mga-ability-input)<br>
 > &nbsp; 1.3 [(Explicit) Cooldowns](#mga-cooldowns)<br>
 > &nbsp; 1.4 [AI-Controlled Ability usage](#mga-ai-controlled)
@@ -28,6 +26,9 @@ Therefore, my aim was to provide a base GAS setup, that can be used for (almost)
 > 3. [Modular Attribute Set](#modular-attribute-set)
 > 3. [Ability Tasks](#ability-tasks)
 > 100. [Installing the plugin](#installing)
+
+<!-- &nbsp; 1.2 [Actor Tracking](#mga-actor-tracking)<br>
+> &nbsp; 1.3 [Failure Management](#mga-failure-management)<br>-->
 
 ---
 
