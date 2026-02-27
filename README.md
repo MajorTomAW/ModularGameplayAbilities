@@ -85,7 +85,7 @@ This will be injected into the provied Cooldown Gameplay Effect class, together 
 
 Therefore, allowing you to share the same Cooldown Gameplay Effect with multiple Abilities.
 
-> [!WARN]
+> [!WARNING]
 > Since CheckCooldown() checks for cooldown tags (applied from the Cooldown Gameplay Effect), you must have unique Explicit Cooldown tags PER ability.
 > Otherwise the cooldown might function as a global cooldown, blocking all abilities, or cause unexpected behavior.
 >
