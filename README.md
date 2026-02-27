@@ -52,6 +52,8 @@ Gameplay Ability activation can happen in 3 different ways:
 
 ![image](https://github.com/user-attachments/assets/f7fafb5b-391c-48c4-a790-bc81c6752c6c)
 
+Read more about abilit yinput [here](#mga-ability-input)
+
 This will run through the default ability activation process but also checking for its Activation Group.
 The principle of Activation Groups is pretty much ported from Lyra.
 
@@ -71,6 +73,22 @@ Potential usage of this could be:
 
 ![image](https://github.com/user-attachments/assets/5812b4f2-693c-498b-b085-638b29e515ce)
 
+
+---
+<a name="mga-ability-input"></a>
+### Ability Input
+
+For convenience, the ``UModularGameplayAbility`` comes with built-in "input released/pressed" methods,<br>
+which will be triggereged according to the ability's ``Activation Policy``.<br>
+Both native and blueprint versions.
+```cpp
+virtual void OnAbilityInputPressed(float TimeWaited);
+virtual void OnAbilityInputReleased(float TimeHeld);
+```
+
+![image](https://github.com/user-attachments/assets/517d9fbb-bbd7-44b9-bfae-bc2e7dd759b5)
+
+---
 
 <!---
 
