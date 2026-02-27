@@ -25,9 +25,9 @@ protected:
 	virtual bool ConfigureProperties() override;
 	virtual UObject* FactoryCreateNew(UClass* InClass, UObject* InParent, FName InName, EObjectFlags Flags, UObject* Context, FFeedbackContext* Warn, FName CallingContext) override;
 	//~ End UFactory Interface
-	
+
 private:
-	UPROPERTY(EditAnywhere)
+	UPROPERTY()
 	TSubclassOf<UModularAbilitySet> SelectedAssetClass;
 
 	UPROPERTY(Config)

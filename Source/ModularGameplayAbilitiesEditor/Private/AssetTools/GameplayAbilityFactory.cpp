@@ -4,12 +4,14 @@
 #include "GameplayAbilityFactory.h"
 
 #include "ClassViewerModule.h"
-#include "KismetCompilerModule.h"
 #include "ModularGameplayAbilitiesClassFilter.h"
 #include "Abilities/GameplayAbility.h"
+
+#include "KismetCompilerModule.h"
 #include "Kismet/BlueprintMapLibrary.h"
 #include "Kismet2/KismetEditorUtilities.h"
 #include "Kismet2/SClassPickerDialog.h"
+#include "Widgets/SWindow.h"
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(GameplayAbilityFactory)
 
@@ -43,12 +45,13 @@ bool UGameplayAbilityFactory::ConfigureProperties()
 		// If there is only one derived class, skip the class picker
 		return true;
 	}
-	
+
 	// Null the parent class to ensure one is selected
 	ParentClass = nullptr;
 
 	// Fill in options
 	FClassViewerInitializationOptions Options;
+	Options.NameTypeToDisplay = EClassViewerNameTypeToDisplay::DisplayName;
 	Options.Mode = EClassViewerMode::ClassPicker;
 	Options.ExtraPickerCommonClasses.Empty();
 	Options.DisplayMode = EClassViewerDisplayMode::ListView;
@@ -65,6 +68,24 @@ bool UGameplayAbilityFactory::ConfigureProperties()
 
 	const FText TitleText = LOCTEXT("PickParentClass", "Pick Parent Class for New Gameplay Ability");
 	UClass* ChosenClass = nullptr;
+
+	/*TSharedRef<SWindow> FatWindow = SNew(SWindow)
+		.Title(TitleText)
+		.SizingRule(ESizingRule::UserSized)
+		.ClientSize(FVector2D(620.f, 300.f))
+		.SupportsMaximize(false)
+		.SupportsMinimize(false);
+
+	TSharedRef<SClassPickerDialog> ClassPickerDialog = SNew(SClassPickerDialog)
+		.ParentWindow(FatWindow)
+		.Options(Options)
+		.AssetType(SupportedClass);
+
+	FatWindow->SetContent(ClassPickerDialog);
+	GEditor->EditorAddModalWindow(FatWindow);
+
+	if (ClassPickerDialog->GetCh)*/
+
 	const bool bPressedOk = SClassPickerDialog::PickClass(TitleText, Options, ChosenClass, UGameplayAbility::StaticClass());
 
 	if (bPressedOk)
@@ -96,7 +117,7 @@ UObject* UGameplayAbilityFactory::FactoryCreateNew(
 		FKismetEditorUtilities::CreateBlueprint(ParentClass, InParent, InName, BPTYPE_Normal, BlueprintClass, BlueprintGeneratedClass, CallingContext);
 
 	// Mark the Blueprint as Data-Only
-	Blueprint->bRecompileOnLoad = false;
+	// Blueprint->bRecompileOnLoad = false;
 
 	return Blueprint;
 }
@@ -129,7 +150,7 @@ bool UGameplayEffectFactory::ConfigureProperties()
 		// If there is only one derived class, skip the class picker
 		return true;
 	}
-	
+
 	// Null the parent class to ensure one is selected
 	ParentClass = nullptr;
 

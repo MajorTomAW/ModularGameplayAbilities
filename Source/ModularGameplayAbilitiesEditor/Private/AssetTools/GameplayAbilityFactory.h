@@ -7,7 +7,7 @@
 #include "GameplayAbilityFactory.generated.h"
 
 // Factory for UGameplayAbility
-UCLASS(HideCategories = Object, Config = Editor)
+UCLASS(HideCategories = Object, Config = Editor, DefaultConfig)
 class UGameplayAbilityFactory : public UBlueprintFactory
 {
 	GENERATED_BODY()
@@ -22,13 +22,13 @@ protected:
 	virtual UObject* FactoryCreateNew(UClass* InClass, UObject* InParent, FName InName, EObjectFlags Flags, UObject* Context, FFeedbackContext* Warn, FName CallingContext) override;
 	//~ End UFactory Interface
 
-private:
-	UPROPERTY(Config)
+protected:
+	UPROPERTY(Config, EditAnywhere, meta=(AllowedClasses="/Script/GameplayAbilities.GameplayAbility"), Category="Abilities")
 	TArray<TObjectPtr<UClass>> CommonAbilityClasses;
 };
 
 // Factory for UGameplayEffect
-UCLASS(HideCategories = Object, Config = Editor)
+UCLASS(HideCategories = Object, Config = Editor, DefaultConfig)
 class UGameplayEffectFactory : public UBlueprintFactory
 {
 	GENERATED_BODY()
@@ -43,7 +43,7 @@ protected:
 	virtual UObject* FactoryCreateNew(UClass* InClass, UObject* InParent, FName InName, EObjectFlags Flags, UObject* Context, FFeedbackContext* Warn, FName CallingContext) override;
 	//~ End UFactory Interface
 
-private:
-	UPROPERTY(Config)
-	TArray<TObjectPtr<UClass>> CommonEffectClasses;	
+protected:
+	UPROPERTY(Config, EditAnywhere, meta=(AllowedClasses="/Script/GameplayAbilities.GameplayEffect"), Category="Effects")
+	TArray<TObjectPtr<UClass>> CommonEffectClasses;
 };

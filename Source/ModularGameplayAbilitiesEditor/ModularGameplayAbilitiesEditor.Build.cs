@@ -24,6 +24,7 @@ public class ModularGameplayAbilitiesEditor : ModuleRules
                 "ModularGameplayAbilities",
                 "UnrealEd",
                 "AssetDefinition",
+                "PropertyEditor",
             }
         );
     }
