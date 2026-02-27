@@ -196,7 +196,7 @@ When the Ability System got created, you would then apply those pending attribut
 
 To see how one would do that, take a look at the _[AModularAbilityActor](Source/ModularGameplayAbilities/Public/ModularAbilityActor.h)_.
 
-![image](httpshttps://github.com/user-attachments/assets/1f017338-4eeb-49f3-a155-77e739cb44df)
+![image](https://github.com/user-attachments/assets/1f017338-4eeb-49f3-a155-77e739cb44df)
 
 > Thanks to:
 > - [Vorixo](https://vorixo.github.io/devtricks/lazy-loading-asc/)
