@@ -6,18 +6,19 @@ public class ModularGameplayAbilities : ModuleRules
 {
 	public ModularGameplayAbilities(ReadOnlyTargetRules Target) : base(Target)
 	{
-		PublicDependencyModuleNames.AddRange(new[] 
-		{ 
+		PublicDependencyModuleNames.AddRange(new[]
+		{
 			"Core",
 			"GameFeatures",
 			"GameplayAbilities",
 			"GameplayTasks",
 			"GameplayTags",
+			"EnhancedInput",
 		});
-		
+
 		PrivateDependencyModuleNames.AddRange(new[]
-		{ 
-			"CoreUObject", 
+		{
+			"CoreUObject",
 			"Engine",
 			"NetCore",
 			"AIModule",
