@@ -1,8 +1,14 @@
 # Modular Gameplay Abilities
 
-## <a id="head"></a> 📋 〢 Overview
+## <a id="head"></a> Overview
 
 Unreal Engine Plugin for extending the GAS in a Lyra-like manner.
+The reason this plugin exists, is that I find myself very often writing boilerplate to setup GAS for my projects.
+Therefore, my aim was to provide a base GAS setup, that can be used for (almost) any type of project.
+
+(I don't really like the name "Modular Gameplay Abilities" anymore lol, I was feeling a bit too fancy when I chose that name.)
+
+
 
 > [!WARNING]
 > This is still in development and some features may not work as expected.
@@ -16,8 +22,11 @@ Unreal Engine Plugin for extending the GAS in a Lyra-like manner.
 > &nbsp; 1.3 [Failure Management](#mga-failure-management)<br>
 > &nbsp; 1.4 [(Explicit) Cooldowns](#mga-cooldowns)<br>
 > &nbsp; 1.5 [AI-Controlled Ability usage](#mga-ai-controlled)
-> 2. [Lazy-Loading the ASC](#asc-lazyloading)
-> 3. [Installing the plugin](#installing)
+> 2. [Modular Ability System Component](#modular-asc)<br>
+> &nbsp; 2.1 [Lazy-Loading the ASC](#asc-lazyloading)
+> 3. [Modular Attribute Set](#modular-attribute-set)
+> 3. [Ability Tasks](#ability-tasks)
+> 100. [Installing the plugin](#installing)
 
 ---
 
@@ -114,6 +123,11 @@ Thus setting up an example of how to lazy-load the Ability System and manage pen
 ![image](https://github.com/user-attachments/assets/2557c7a8-4154-44ea-816b-87c760f965f5)
 
 [Credit (Vorixo)](https://vorixo.github.io/devtricks/lazy-loading-asc/)
+
+---
+
+<a name="ability-tasks"></a>
+#
 
 ---
 
