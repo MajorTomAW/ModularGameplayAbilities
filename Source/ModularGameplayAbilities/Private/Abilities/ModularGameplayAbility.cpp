@@ -53,8 +53,8 @@ UModularGameplayAbility::UModularGameplayAbility(const FObjectInitializer& Objec
 	bStopsAIBehaviorLogic = false;
 	bStopsAIMovement = false;
 	bStopsAIRVOAvoidance = false;
-	ActivationNoiseRange = 1000.f;
-	ActivationNoiseLoudness = 1.0f;
+	ActivationNoiseRange = 0.f;
+	ActivationNoiseLoudness = 0.f;
 
 	bAutoUntrackActorsOnEndAbility = true;
 
@@ -324,14 +324,14 @@ bool UModularGameplayAbility::StartTrackingActorWithGroup(AActor* ActorToTrack, 
 	{
 		return false;
 	}
-	
+
 	UModularAbilitySystemComponent* AbilitySystem =
 		Cast<UModularAbilitySystemComponent>(CurrentActorInfo->AbilitySystemComponent.Get());
 	if (!IsValid(AbilitySystem))
 	{
 		return false;
 	}
-	
+
 	return AbilitySystem->StartTrackingActorsForTag(ActorToTrack, GroupTag);
 }
 
@@ -361,7 +361,7 @@ void UModularGameplayAbility::ClearTrackedGroupedActors(FGameplayTag GroupTag, b
 	{
 		return;
 	}
-	
+
 	UModularAbilitySystemComponent* AbilitySystem =
 		Cast<UModularAbilitySystemComponent>(CurrentActorInfo->AbilitySystemComponent.Get());
 	if (!IsValid(AbilitySystem))
@@ -444,6 +444,8 @@ void UModularGameplayAbility::GetOwnedGameplayTags(FGameplayTagContainer& TagCon
 #endif
 }
 
+
+
 bool UModularGameplayAbility::ShouldReceiveInputEvents() const
 {
 	if (ActivationPolicy == EGameplayAbilityActivationPolicy::Active)
@@ -460,14 +462,14 @@ void UModularGameplayAbility::TriggerAIEventsOnActivate_Implementation(AAIContro
 	if (ActivationNoiseLoudness > 0.f && ActivationNoiseRange > 0.f)
 	{
 		static const FName NoiseEventTag = "AbilityActivated";
-		
+
 		UAISense_Hearing::ReportNoiseEvent(
 			GetWorld(),
 			GetAvatarActorFromActorInfo()->GetActorLocation(),
 			ActivationNoiseLoudness,
 			GetAvatarActorFromActorInfo(),
 			ActivationNoiseRange,
-			NoiseEventTag);	
+			NoiseEventTag);
 	}
 
 	if (IsValid(OwningAIController))
@@ -607,7 +609,7 @@ void UModularGameplayAbility::SetCanBeCanceled(bool bCanBeCanceled)
 		ABILITY_LOG(Error, TEXT("%hs: Can't set CanBeCanceled to false on an Exclusive_Replaceable ability (%s)."), __func__, *GetName());
 		return;
 	}
-	
+
 	Super::SetCanBeCanceled(bCanBeCanceled);
 }
 
@@ -628,7 +630,7 @@ void UModularGameplayAbility::OnGiveAbility(const FGameplayAbilityActorInfo* Act
 void UModularGameplayAbility::OnRemoveAbility(const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilitySpec& Spec)
 {
 	K2_OnAbilityRemoved();
-	
+
 	Super::OnRemoveAbility(ActorInfo, Spec);
 }
 
@@ -643,7 +645,7 @@ void UModularGameplayAbility::ActivateAbility(const FGameplayAbilitySpecHandle H
 	{
 		// Cache the starting time of this ability's activation
 		LastInputCallbackTime = GetWorld()->GetTimeSeconds();
-		
+
 		// For locally controlled players, immediately check for the input pressed flag
 		constexpr bool bShouldCheckImmediately = false;
 
@@ -666,7 +668,7 @@ void UModularGameplayAbility::ActivateAbility(const FGameplayAbilitySpecHandle H
 				EAbilityGenericReplicatedEvent::InputPressed,
 				Handle,
 				ActivationInfo.GetActivationPredictionKey())
-			.AddUObject(this, &ThisClass::OnInputChangedCallback, true);	
+			.AddUObject(this, &ThisClass::OnInputChangedCallback, true);
 		}
 
 		// Assign to the input released delegate
@@ -690,11 +692,14 @@ void UModularGameplayAbility::ActivateAbility(const FGameplayAbilitySpecHandle H
 			}
 		}
 	}
-	
+
 	Super::ActivateAbility(Handle, ActorInfo, ActivationInfo, TriggerEventData);
 
 	// Trigger AI events on activation
-	TriggerAIEventsOnActivate(GetOwningAIController());
+	if (bTriggerAIEvents)
+	{
+		TriggerAIEventsOnActivate(GetOwningAIController());
+	}
 }
 void UModularGameplayAbility::OnInputChangedCallback(bool bIsPressed)
 {
@@ -706,7 +711,7 @@ void UModularGameplayAbility::OnInputChangedCallback(bool bIsPressed)
 
 	// Determine the duration between the last input callback and this one
 	const float ElapsedTime = GetWorld()->GetTimeSeconds() - LastInputCallbackTime;
-	
+
 	UAbilitySystemComponent* AbilitySystem = GetAbilitySystemComponentFromActorInfo();
 	if (!AbilitySystem || !IsValid(this))
 	{
@@ -784,8 +789,11 @@ void UModularGameplayAbility::EndAbility(
 	}
 
 	// Trigger AI events on deactivation
-	TriggerAIEventsOnDeactivate(GetOwningAIController());
-	
+	if (bTriggerAIEvents)
+	{
+		TriggerAIEventsOnDeactivate(GetOwningAIController());
+	}
+
 	Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);
 }
 
@@ -808,7 +816,7 @@ void UModularGameplayAbility::CancelAbility(
 			bCanBeCanceled ? TEXT("true") : TEXT("false"));
 	}
 #endif
-	
+
 	Super::CancelAbility(Handle, ActorInfo, ActivationInfo, bReplicateCancelAbility);
 }
 
@@ -846,7 +854,7 @@ void UModularGameplayAbility::ApplyCost(
 	{
 		return;
 	}
-	
+
 	Super::ApplyCost(Handle, ActorInfo, ActivationInfo);
 
 	check(ActorInfo);
@@ -890,8 +898,7 @@ void UModularGameplayAbility::ApplyCost(
 			continue;
 		}
 
-		const FInstancedStruct& Instanced = AbilityCosts[i];
-		if (const FModularAbilityCost* Cost = Instanced.GetPtr<FModularAbilityCost>())
+		if (const FModularAbilityCost* Cost = AbilityCosts[i].GetPtr<FModularAbilityCost>())
 		{
 			if (Cost->ShouldOnlyApplyCostOnHit())
 			{
@@ -928,6 +935,39 @@ void UModularGameplayAbility::ApplyCooldown(
 {
 	const int32 AbilityLevel = GetAbilityLevel(Handle, ActorInfo);
 
+	if (HasExplicitCooldownDuration())
+	{
+		ApplyCooldownWithDuration(Handle, ActorInfo, ActivationInfo, ExplicitCooldownDuration.GetValueAtLevel(AbilityLevel));
+	}
+	else
+	{
+		UGameplayEffect* CooldownGE = GetCooldownGameplayEffect();
+		if (CooldownGE)
+		{
+			if (CooldownGE && (HasAuthorityOrPredictionKey(ActorInfo, &ActivationInfo)))
+			{
+				FGameplayEffectSpecHandle SpecHandle = MakeOutgoingGameplayEffectSpec(Handle, ActorInfo, ActivationInfo, GetCooldownGameplayEffect()->GetClass(), GetAbilityLevel());
+				if (SpecHandle.IsValid())
+				{
+					SpecHandle.Data->SetStackCount(1);
+					ApplyGameplayEffectSpecToOwner(Handle, ActorInfo, ActivationInfo, SpecHandle);
+
+					// Let others know we applied a cooldown
+					OnApplyCooldownDelegate.Broadcast(this, SpecHandle.Data->Duration, ExplicitCooldownTags);
+				}
+			}
+		}
+	}
+}
+
+void UModularGameplayAbility::ApplyCooldownWithDuration(
+	const FGameplayAbilitySpecHandle Handle,
+	const FGameplayAbilityActorInfo* ActorInfo,
+	const FGameplayAbilityActivationInfo ActivationInfo,
+	const float Duration) const
+{
+	const int32 AbilityLevel = GetAbilityLevel(Handle, ActorInfo);
+
 	// Check if we have a cooldown effect
 	const UGameplayEffect* CooldownEffectCDO = GetCooldownGameplayEffect();
 	if (!IsValid(CooldownEffectCDO))
@@ -937,18 +977,22 @@ void UModularGameplayAbility::ApplyCooldown(
 	const FGameplayEffectSpecHandle CooldownSpecHandle = MakeOutgoingGameplayEffectSpec(CooldownEffectCDO->GetClass(), AbilityLevel);
 
 	// Check if we have valid cooldown tags
-	if (HasExplicitCooldownDuration())
+	if (ExplicitCooldownTags.IsValid())
 	{
-		if (ExplicitCooldownTags.IsValid())
+		CooldownSpecHandle.Data->SetDuration(Duration, true);
+
+		CooldownSpecHandle.Data->AppendDynamicAssetTags(ExplicitCooldownAssetTags);
+		CooldownSpecHandle.Data->DynamicGrantedTags.AppendTags(ExplicitCooldownTags);
+
+		if (bPersistCooldownOnDeath)
 		{
-			CooldownSpecHandle.Data->AppendDynamicAssetTags(ExplicitCooldownAssetTags);
-			CooldownSpecHandle.Data->DynamicGrantedTags.AppendTags(ExplicitCooldownTags);	
+			//CooldownSpecHandle.Data->AppendDynamicAssetTags()
 		}
-		else
-		{
-			ABILITY_LOG(Error, TEXT("ExplicitCooldownTags are not valid for ability %s. Cooldown will not be applied."), *GetName());
-			return;
-		}
+	}
+	else
+	{
+		ABILITY_LOG(Error, TEXT("ExplicitCooldownTags are not valid for ability %s. Cooldown will not be applied."), *GetName());
+		return;
 	}
 
 	// Apply cooldown
@@ -956,7 +1000,7 @@ void UModularGameplayAbility::ApplyCooldown(
 		ApplyGameplayEffectSpecToOwner(Handle, ActorInfo, ActivationInfo, CooldownSpecHandle);
 
 	// Let others know we applied a cooldown
-	OnApplyCooldownDelegate.Broadcast(this, ExplicitCooldownDuration.GetValueAtLevel(AbilityLevel), ExplicitCooldownTags);
+	OnApplyCooldownDelegate.Broadcast(this, Duration, ExplicitCooldownTags);
 }
 
 bool UModularGameplayAbility::DoesAbilitySatisfyTagRequirements(
@@ -988,7 +1032,7 @@ bool UModularGameplayAbility::DoesAbilitySatisfyTagRequirements(
 
 	AllRequiredTags = ActivationRequiredTags;
 	AllBlockedTags = ActivationBlockedTags;
-	
+
 	// Expand our ability tags by adding additional required/blocked tags
 	if (ModularAbilitySystem)
 	{
@@ -1010,7 +1054,7 @@ bool UModularGameplayAbility::DoesAbilitySatisfyTagRequirements(
 		{
 			if (OptionalRelevantTags) // Add additional tag checks
 			{
-				
+
 			}
 
 			bBlocked = true;
@@ -1108,7 +1152,7 @@ void UModularGameplayAbility::NativeOnAbilityFailedToActivate(const FGameplayTag
 	bool bSimpleFailureFound = false;
 	for (const FGameplayTag& Reason : FailedReason)
 	{
-		
+
 	}
 }
 
@@ -1129,7 +1173,7 @@ PRAGMA_DISABLE_DEPRECATION_WARNINGS
 		Result = EDataValidationResult::Invalid;
 		Context.AddError(NSLOCTEXT("ModularGameplayAbilities", "NonInstancedAbilityError", "NonInstanced abilities are deprecated. Use InstancedPerActor instead."));
 	}
-PRAGMA_ENABLE_DEPRECATION_WARNINGS	
+PRAGMA_ENABLE_DEPRECATION_WARNINGS
 
 	return Result;
 }

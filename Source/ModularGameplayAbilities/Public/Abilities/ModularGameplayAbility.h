@@ -32,7 +32,7 @@ class MODULARGAMEPLAYABILITIES_API UModularGameplayAbility
 {
 	GENERATED_BODY()
 	friend class UModularAbilitySystemComponent;
-	
+
 public:
 	UModularGameplayAbility(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
 
@@ -119,6 +119,8 @@ public:
 	virtual void GetOwnedGameplayTags(FGameplayTagContainer& TagContainer) const override;
 	//~ End IGameplayTagAssetInterface Interface
 
+	/** Applies a cooldown with provided duration. */
+	virtual void ApplyCooldownWithDuration(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const float Duration) const;
 
 	/** Returns the maximum number of actors that can be tracked by this ability as an integer. */
 	UFUNCTION(BlueprintCallable, Category = Ability, BlueprintAuthorityOnly)
@@ -163,7 +165,7 @@ public:
 	{
 		FGameplayTagContainer OverridenFailedReason;
 		K2_OverrideFailedReason(FailedReason,OverridenFailedReason);
-		
+
 		NativeOnAbilityFailedToActivate(OverridenFailedReason);
 		ScriptOnAbilityFailedToActivate(OverridenFailedReason);
 	}
@@ -187,7 +189,7 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = Ability, DisplayName="Trigger AI Events On Deactivate")
 	void TriggerAIEventsOnDeactivate(AAIController* OwningAIController);
 	virtual void TriggerAIEventsOnDeactivate_Implementation(AAIController* OwningAIController);
-	
+
 	/** Returns the AI controller that owns this ability. */
 	UFUNCTION(BlueprintCallable, Category = Ability)
 	AAIController* GetOwningAIController() const;
@@ -268,7 +270,7 @@ protected:
 	 * These will only be called if this ability is set to receive input events,
 	 * which can either be set by the ActivationPolicy or by setting bForceReceiveInput to true.
 	 */
-	
+
 	/** Called when this ability's input is pressed. */
 	UFUNCTION(BlueprintImplementableEvent, Category = Ability, DisplayName = OnAbilityInputPressed)
 	void K2_OnAbilityInputPressed(float TimeWaited);
@@ -300,7 +302,7 @@ protected:
 	// ----------------------------------------------------------------------------------------------------------------
 	//	Activation
 	// ----------------------------------------------------------------------------------------------------------------
-	
+
 	/** How the ability is meant to be activated. This can be used to gate abilities from being activated in certain ways. */
 	UPROPERTY(EditDefaultsOnly, Category = Activation)
 	TEnumAsByte<EGameplayAbilityActivationPolicy::Type> ActivationPolicy;
@@ -327,7 +329,7 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category = ActorTracking)
 	uint8 bAutoUntrackActorsOnEndAbility : 1;
-	
+
 	UPROPERTY(EditDefaultsOnly, Category = ActorTracking)
 	FScalableFloat MaxTrackedActors;
 
@@ -380,32 +382,40 @@ protected:
 	uint8 bApplyingCostsEnabled : 1;
 
 	/** List of additional costs that must be paid to activate this ability. */
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Costs, NoClear, meta=(ExcludeBaseStruct,ShowOnlyInnerProperties,
-		BaseStruct="/Script/ModularGameplayAbilities.ModularAbilityCost"))
-	TArray<FInstancedStruct> AbilityCosts;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Costs, NoClear, meta=(ExcludeBaseStruct,ShowOnlyInnerProperties))
+	TArray<TInstancedStruct<FModularAbilityCost>> AbilityCosts;
 
+public:
 	// ----------------------------------------------------------------------------------------------------------------
 	//	AI
 	// ----------------------------------------------------------------------------------------------------------------
 
+	/** If true, will send AI events. */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category=AI)
+	uint8 bTriggerAIEvents:1;
+
 	/** If true, when AI activates the ability, it will stop the Behavior Logic until the ability is finished/aborted. */
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = AI, meta = (DisplayName = "Stops AI Behavior Logic"))
-	uint8 bStopsAIBehaviorLogic : 1;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = AI, meta = (DisplayName = "Stops AI Behavior Logic", EditCondition="bTriggerAIEvents", EditConditionHides))
+	uint8 bStopsAIBehaviorLogic:1;
 
 	/** If true, when AI activates the ability, it will stop the Movement until the ability is finished/aborted. */
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = AI, meta = (DisplayName = "Stops AI Movement"))
-	uint8 bStopsAIMovement : 1;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = AI, meta = (DisplayName = "Stops AI Movement", EditCondition="bTriggerAIEvents", EditConditionHides))
+	uint8 bStopsAIMovement:1;
 
 	/** If true, when AI activates the ability, it will stop the RVO Avoidance until the ability is finished/aborted. */
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = AI, meta = (DisplayName = "Stops AI RVO Avoidance"))
-	uint8 bStopsAIRVOAvoidance : 1;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = AI, meta = (DisplayName = "Stops AI RVO Avoidance", EditCondition="bTriggerAIEvents", EditConditionHides))
+	uint8 bStopsAIRVOAvoidance:1;
 
 	/** The range of the noise event that will be sent when the ability is activated. */
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = AI, meta = (Units=cm))
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = AI, meta = (Units=cm, EditCondition="bTriggerAIEvents", EditConditionHides))
 	float ActivationNoiseRange;
 
+	/** The range of the noise event that will be sent when the ability performs a hit. */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = AI, meta = (Units=cm, EditCondition="bTriggerAIEvents", EditConditionHides))
+	float ImpactNoiseRange;
+
 	/** The loudness of the noise event that will be sent when the ability is activated. */
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = AI/*, meta = (Units=decibels)*/)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = AI, meta = (EditCondition="bTriggerAIEvents", EditConditionHides))
 	float ActivationNoiseLoudness;
 
 private:
