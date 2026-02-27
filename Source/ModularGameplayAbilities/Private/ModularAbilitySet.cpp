@@ -11,6 +11,7 @@
 
 #include "AbilitySystemComponent.h"
 #include "AbilitySystemLog.h"
+#include "GameplayEffectApplicationInfo.h"
 #include "ModularGameplayAbilitiesSettings.h"
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(ModularAbilitySet)
@@ -45,7 +46,7 @@ void FAbilitySetHandle::AppendAbilitySpecHandles(const TArray<FGameplayAbilitySp
 	{
 		if (Handle.IsValid())
 		{
-			AddAbilitySpecHandle(Handle);	
+			AddAbilitySpecHandle(Handle);
 		}
 	}
 }
@@ -66,7 +67,7 @@ void FAbilitySetHandle::AppendGameplayEffectHandles(const TArray<FActiveGameplay
 	{
 		if (Handle.IsValid())
 		{
-			AddGameplayEffectHandle(Handle);	
+			AddGameplayEffectHandle(Handle);
 		}
 	}
 }
@@ -88,7 +89,7 @@ void FAbilitySetHandle::AppendAttributeSets(const TArray<UAttributeSet*>& InAttr
 	{
 		if (IsValid(Set))
 		{
-			AddAttributeSet(Set);	
+			AddAttributeSet(Set);
 		}
 	}
 }
@@ -190,7 +191,7 @@ void UModularAbilitySet::GiveToAbilitySystem(
 			{
 				OutHandle->AddAbilitySpecHandle(Handle);
 			}
-		}	
+		}
 	}
 	else
 	{
@@ -206,13 +207,13 @@ void UModularAbilitySet::GiveToAbilitySystem(
 
 			const UClass* AbilityClass = Ability.AbilityClass.LoadSynchronous();
 			UGameplayAbility* CDO = AbilityClass->GetDefaultObject<UGameplayAbility>();
-			
+
 			FGameplayAbilitySpec Spec(CDO, Ability.AbilityLevel);
 			Spec.SourceObject = SourceObject;
 			Spec.GetDynamicSpecSourceTags().AddTag(Ability.InputTag);
 
 			const FGameplayAbilitySpecHandle Handle = AbilitySystem->GiveAbility(Spec);
-			
+
 			if (OutHandle)
 			{
 				OutHandle->AddAbilitySpecHandle(Handle);
@@ -225,14 +226,14 @@ void UModularAbilitySet::GiveToAbilitySystem(
 	{
 		const auto& Effect = GameplayEffects[Idx];
 
-		if (!IsValid(Effect.EffectClass))
+		if (Effect.GameplayEffect.IsNull())
 		{
 			ABILITY_LOG(Error, TEXT("Effect at index %d is invalid."), Idx);
 			continue;
 		}
 
-		const UGameplayEffect* EffectCDO = Effect.EffectClass->GetDefaultObject<UGameplayEffect>();
-		const FActiveGameplayEffectHandle Handle = AbilitySystem->ApplyGameplayEffectToSelf(EffectCDO, Effect.EffectLevel, AbilitySystem->MakeEffectContext());
+		const UGameplayEffect* EffectCDO = Effect.GameplayEffect.LoadSynchronous()->GetDefaultObject<UGameplayEffect>();
+		const FActiveGameplayEffectHandle Handle = AbilitySystem->ApplyGameplayEffectToSelf(EffectCDO, Effect.Level.GetValue(), AbilitySystem->MakeEffectContext());
 
 		if (OutHandle)
 		{
@@ -252,7 +253,7 @@ void UModularAbilitySet::GiveToAbilitySystem(
 		}
 
 		UAttributeSet* NewSet = NewObject<UAttributeSet>(AbilitySystem->GetOwner(), AttributeSet.AttributeSetClass);
-		AbilitySystem->AddAttributeSetSubobject(NewSet);
+		AbilitySystem->AddSpawnedAttribute(NewSet);
 
 		if (OutHandle)
 		{
@@ -276,7 +277,7 @@ void UModularAbilitySet::GiveToAbilitySystem(
 	OutAbilityHandles->Reset();
 	OutEffectHandles->Reset();
 	OutAttributeSets->Reset();
-	
+
 	FAbilitySetHandle TempHandles;
 	GiveToAbilitySystem(AbilitySystem, &TempHandles, SourceObject);
 
@@ -320,7 +321,7 @@ EDataValidationResult UModularAbilitySet::IsDataValid(class FDataValidationConte
 	// Validate the effects
 	for (const auto& Effect : GameplayEffects)
 	{
-		if (!Effect.EffectClass)
+		if (Effect.GameplayEffect.IsNull())
 		{
 			Result = EDataValidationResult::Invalid;
 			Context.AddError(FText::Format(LOCTEXT("InvalidEffectClass", "Effect class is invalid in {0}."),

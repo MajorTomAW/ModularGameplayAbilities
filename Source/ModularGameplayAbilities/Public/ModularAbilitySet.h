@@ -11,6 +11,7 @@
 
 #include "ModularAbilitySet.generated.h"
 
+struct FGameplayEffectApplicationInfo;
 class UAttributeSet;
 class UGameplayEffect;
 class UGameplayAbility;
@@ -48,7 +49,7 @@ struct FAbilityActivatedByInputData
 
 public:
 	virtual ~FAbilityActivatedByInputData() = default;
-	
+
 	/** The gameplay ability class that is meant to receive input. */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Gameplay Ability")
 	TSoftClassPtr<UGameplayAbility> AbilityClass = nullptr;
@@ -59,24 +60,6 @@ public:
 
 protected:
 	MY_API virtual int32 GetInputKey() const PURE_VIRTUAL(GetInputKeyInternal, return GetInputKey(););
-};
-
-/**
- * Data used by the ability set to grant gameplay effects.
- */
-USTRUCT(BlueprintType)
-struct FModularAbilitySet_GameplayEffect
-{
-	GENERATED_BODY()
-
-public:
-	/** Gameplay effect class to grant. */
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Gameplay Effect")
-	TSubclassOf<UGameplayEffect> EffectClass = nullptr;
-
-	/** Level of effect to grant. */
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Gameplay Effect", meta = (ClampMin = 1, UIMin = 1))
-	int32 EffectLevel = 1;
 };
 
 /** Data used by the ability set to grant attributes. */
@@ -146,7 +129,7 @@ protected:
 	/** Stored ability system component that got these handles granted. */
 	UPROPERTY(Transient)
 	TWeakObjectPtr<UAbilitySystemComponent> TargetAbilitySystem;
-	
+
 	/** Handles to granted abilities. */
 	UPROPERTY(Transient)
 	TArray<FGameplayAbilitySpecHandle> GrantedAbilityHandles;
@@ -187,8 +170,8 @@ protected:
 	TSet<TSoftClassPtr<UGameplayAbility>> GameplayAbilities;
 
 	/** Effects to grant when this set is given. */
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = AbilitySystem, meta = (TitleProperty=EffectClass))
-	TArray<FModularAbilitySet_GameplayEffect> GameplayEffects;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = AbilitySystem, meta = (TitleProperty=GameplayEffect))
+	TArray<FGameplayEffectApplicationInfo> GameplayEffects;
 
 	/** Attribute sets to grant when this set is given. */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Attributes, meta = (TitleProperty=AttributeSetClass))
