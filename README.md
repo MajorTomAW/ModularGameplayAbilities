@@ -24,7 +24,7 @@ Therefore, my aim was to provide a base GAS setup, that can be used for (almost)
 > &nbsp; 1.5 [Utilies](#mga-utilies)<br>
 > 2. [Modular Ability System Component](#modular-asc)<br>
 > &nbsp; 2.1 [Lazy-Loading the ASC](#asc-lazyloading)<br>
-> 3. [Ability Set](#ability-set)<br>
+> 3. [Ability Set](#modular-ability-set)<br>
 > 4. [Modular Attribute Set](#modular-attribute-set)<br>
 > 5. [Ability Tasks](#ability-tasks)
 > 100. [Installing the plugin](#installing)
@@ -191,7 +191,7 @@ public:
 	virtual void SetPendingAttributeFromReplication(const FGameplayAttribute& Attribute, const FGameplayAttributeData& NewValue) = 0;
 };
 ```
-Whenever an OnRep_SomeAttributeName gets triggered inside your AttributeSet, you would call the new ``LAZY_ATTRIBUTE_REPNOTIFY`` (@see [Attribute Set](#modular-attribute-set)) instead of the old ``GAMEPLAYATTRIBUTE_REPNOTIFY`` which will add the pending attribute from replication to the owning actor.<br>
+Whenever an OnRep_SomeAttributeName gets triggered inside your AttributeSet, you would call the new ``LAZY_ATTRIBUTE_REPNOTIFY`` (@see [Modular Attribute Set](#modular-attribute-set)) instead of the old ``GAMEPLAYATTRIBUTE_REPNOTIFY`` which will add the pending attribute from replication to the owning actor.<br>
 When the Ability System got created, you would then apply those pending attributes.<br>
 
 To see how one would do that, take a look at the _[AModularAbilityActor](Source/ModularGameplayAbilities/Public/ModularAbilityActor.h)_.
@@ -201,6 +201,233 @@ To see how one would do that, take a look at the _[AModularAbilityActor](Source/
 > Thanks to:
 > - [Vorixo](https://vorixo.github.io/devtricks/lazy-loading-asc/)
 > - Epic Games, Inc.
+
+---
+
+<a name="modular-ability-set"></a>
+## Modular Ability Set
+The _[ModularAbilitySet](Source/ModularGameplayAbilities/Public/ModularAbilitySet.h)_ is a DataAsset, which stores a list of Gameplay Abilties, Gameplay Effects and Attribute Sets that can be granted and taken from an Ability System.
+
+![image](https://github.com/user-attachments/assets/fe5c7859-a882-4e37-8d37-4d0f888c0eef)
+
+#### Abilities
+
+| Property | Description |
+|--------------|-------------------|
+| Abilty Class | The ability class be granted. |
+| Ability Level | The initial level of the granted ability. |
+| Input Tag | A gameplay tag that will be added to the ``FGameplayAbilitySpec``'s DynamicAbilityTags. Used for input activation* |
+
+> [!NOTE]
+> I don't really like using Gameplay Tags as input identification keys and would rather use the existing InputID's that GAS comes with. <br>
+> I will show a way how to use them after this section.
+
+#### Gameplay Effects
+
+| Property | Description |
+|--------------|-------------------|
+| Gameplay Effect | The gameplay effect class to be given. |
+| Level | The level of the granted effect. |
+
+#### Attributes
+A list of attribute set classes to be spawned on the target.
+
+### Using Input ID's instead
+In my game, I use a custom input id enum instead of Gameplay Tags.<br>
+Some people might disagree with me, to use Gameplay Tags because of its _modulariy_ instead, but I'd rather not have the cost of replicating unnecessary gamplay tags (even though with fast replication it only replicated indices instead of the whole tag) and use the existing Input ID's that GAS comes with.
+
+![image](https://github.com/user-attachments/assets/82f6d05b-daa9-417a-8fc9-0a682920d1a7)
+
+To actually use Input ID's you need to do several thins.
+1. In the ``Modular Gameplay Abilties Settings`` you need to enable ``bEnableAlterAbilityInput``.
+2. Create a new struct, that derives from ``FAbilityActivatedByInputData`` which contains your custom ability input enum. And override ``GetInputKey`` to return it's value.<br>
+e.g.,
+```cpp
+USTRUCT(BlueprintType, meta=(DisplayName="Ability Input Data"))
+struct FBotaniAbilityActivatedByInputData : public FAbilityActivatedByInputData
+{
+	GENERATED_BODY()
+
+public:
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Gameplay Ability")
+	TEnumAsByte<EBotaniAbilityInputBinds::Type> InputKey = EBotaniAbilityInputBinds::None;
+
+protected:
+	virtual int32 GetInputKey() const override
+	{
+		return InputKey;
+	}
+};
+```
+3. Create a custom Ability Set class, and add your "Ability Activated By Input Data" struct.<br>
+e.g.,
+```cpp
+/** Non-mutable set of abilities that can be granted or removed to an actor that has an ability system component. */
+UCLASS(Const, meta=(ShortTooltip="Set of Gameplay Abilities and Effects"), PrioritizeCategories=(AbilitySystem))
+class UBotaniAbilitySet : public UModularAbilitySet
+{
+	...
+
+	/** List of gameplay abilities that are meant to be activated by input. */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Input, meta=(TitleProperty="InputKey"))
+	TArray<FBotaniAbilityActivatedByInputData> InputActivatedAbilities;
+
+	//~ Begin UModularAbilitySet Interface
+	virtual void GiveToAbilitySystem(UAbilitySystemComponent* AbilitySystem, FAbilitySetHandle* OutHandle, UObject* SourceObject = nullptr) const override;
+	//~ End UModularAbilitySet Interface
+};
+
+```
+
+4. Override the ``GiveToAbilitySystem()`` method, to use the Input ID's.<br>
+> [!NOTE]
+> As of now, you need to implement the full method all by yourself.<br>
+> Though, I will change this to make it much simpler in the future.
+
+<details>
+<summary>GiveToAbilitySystem() implementation</summary>
+
+```cpp
+void UBotaniAbilitySet::GiveToAbilitySystem(
+	UAbilitySystemComponent* AbilitySystem,
+	FAbilitySetHandle* OutGrantedHandles,
+	UObject* SourceObject) const
+{
+	check(AbilitySystem);
+
+	// Only authority can give or take abilities
+	if (!AbilitySystem->IsOwnerActorAuthoritative())
+	{
+		return;
+	}
+
+	// Assign ASC
+	if (OutGrantedHandles)
+	{
+		OutGrantedHandles->SetTargetAbilitySystem(AbilitySystem);
+	}
+
+	// Grant the abilities
+	if (UModularGameplayAbilitiesSettings::IsUsingAlterAbilityInput())
+	{
+		auto FindInput = [this](const UClass* AbilityClass)
+		{
+			return InputActivatedAbilities.FindByPredicate([AbilityClass](const FBotaniAbilityActivatedByInputData& Rhs)
+			{
+				return Rhs.AbilityClass == AbilityClass;
+			});
+		};
+
+		for (int32 Idx = 0; Idx < GameplayAbilities.Num(); ++Idx)
+		{
+			const TSoftClassPtr Ability = GameplayAbilities.Array()[Idx];
+			if (Ability.IsNull())
+			{
+				ABILITY_LOG(Error, TEXT("Ability at index %d in %s is invalid."),
+					Idx, *GetNameSafe(this));
+				continue;
+			}
+
+			const UClass* AbilityClass = Ability.LoadSynchronous();
+			if (!ensure(AbilityClass))
+			{
+				ABILITY_LOG(Error, TEXT("Ability class %s in %s is valid, but failed to load."),
+					*Ability.GetLongPackageName(), *GetNameSafe(this));
+				continue;
+			}
+			UGameplayAbility* CDO = AbilityClass->GetDefaultObject<UGameplayAbility>();
+
+			FGameplayAbilitySpec Spec(CDO, 1.f);
+			Spec.SourceObject = SourceObject;
+
+			// Assign input id if found
+			if (auto Input = FindInput(AbilityClass))
+			{
+				Spec.InputID = Input->InputKey;
+			}
+
+			const FGameplayAbilitySpecHandle Handle = AbilitySystem->GiveAbility(Spec);
+
+			if (OutGrantedHandles)
+			{
+				OutGrantedHandles->AddAbilitySpecHandle(Handle);
+			}
+		}
+	}
+	else
+	{
+		for (int32 Idx = 0; Idx < Abilities.Num(); ++Idx)
+		{
+			const auto& Ability = Abilities[Idx];
+
+			if (Ability.AbilityClass.IsNull())
+			{
+				ABILITY_LOG(Error, TEXT("Ability at index %d is invalid."), Idx);
+				continue;
+			}
+
+			const UClass* AbilityClass = Ability.AbilityClass.LoadSynchronous();
+			UGameplayAbility* CDO = AbilityClass->GetDefaultObject<UGameplayAbility>();
+
+			FGameplayAbilitySpec Spec(CDO, Ability.AbilityLevel);
+			Spec.SourceObject = SourceObject;
+			Spec.GetDynamicSpecSourceTags().AddTag(Ability.InputTag);
+
+			const FGameplayAbilitySpecHandle Handle = AbilitySystem->GiveAbility(Spec);
+
+			if (OutGrantedHandles)
+			{
+				OutGrantedHandles->AddAbilitySpecHandle(Handle);
+			}
+		}
+	}
+
+	// Grant the effects
+	for (int32 Idx = 0; Idx < GameplayEffects.Num(); ++Idx)
+	{
+		const auto& Effect = GameplayEffects[Idx];
+
+		if (Effect.GameplayEffect.IsNull())
+		{
+			ABILITY_LOG(Error, TEXT("Effect at index %d is invalid."), Idx);
+			continue;
+		}
+
+		const UGameplayEffect* EffectCDO = Effect.GameplayEffect.LoadSynchronous()->GetDefaultObject<UGameplayEffect>();
+		const FActiveGameplayEffectHandle Handle = AbilitySystem->ApplyGameplayEffectToSelf(EffectCDO, Effect.Level.GetValue(), AbilitySystem->MakeEffectContext());
+
+		if (OutGrantedHandles)
+		{
+			OutGrantedHandles->AddGameplayEffectHandle(Handle);
+		}
+	}
+
+	// Grant the attribute sets
+	for (int32 Idx = 0; Idx < AttributeSets.Num(); ++Idx)
+	{
+		const auto& AttributeSet = AttributeSets[Idx];
+
+		if (!IsValid(AttributeSet.AttributeSetClass))
+		{
+			ABILITY_LOG(Error, TEXT("Attribute set at index %d is invalid."), Idx);
+			continue;
+		}
+
+		UAttributeSet* NewSet = NewObject<UAttributeSet>(AbilitySystem->GetOwner(), AttributeSet.AttributeSetClass);
+		AbilitySystem->AddAttributeSetSubobject(NewSet);
+
+		if (OutGrantedHandles)
+		{
+			OutGrantedHandles->AddAttributeSet(NewSet);
+		}
+	}
+}
+```
+</details>
+
+---
+
+<a name="modular-attribute-set"></a>
 
 ---
 
