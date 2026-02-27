@@ -46,7 +46,7 @@ namespace ModularGameplayCueManagerCVars
 const bool bPreloadEvenInEditor = true;
 
 //////////////////////////////////////////////////////////////////////////
-/// Async Loading 
+/// Async Loading
 
 struct FGameplayCueTagThreadSynchronizeGraphTask : public FAsyncGraphTaskBase
 {
@@ -174,7 +174,7 @@ void UModularGameplayCueManager::LoadAlwaysLoadedCues()
 	if (ShouldDelayLoadGameplayCues())
 	{
 		UGameplayTagsManager& TagManager = UGameplayTagsManager::Get();
-	
+
 		//@TODO: Try to collect these by filtering GameplayCue. tags out of native gameplay tags?
 		TArray<FName> AdditionalAlwaysLoadedCueTags;
 
@@ -187,7 +187,7 @@ void UModularGameplayCueManager::LoadAlwaysLoadedCues()
 			}
 			else
 			{
-				ABILITY_LOG(Warning, TEXT("UModularGameplayCueManager::LoadAlwaysLoadedCues contains invalid tag %s"), *CueTagName.ToString());
+				ABILITY_LOG(Warning, TEXT("UModularGameplayCueManager::AdditionalAlwaysLoadedCueTags contains invalid tag %s"), *CueTagName.ToString());
 			}
 		}
 	}
