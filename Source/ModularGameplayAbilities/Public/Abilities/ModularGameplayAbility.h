@@ -25,7 +25,7 @@ struct FModularAbilityCost;
  * Extended version of the UGameplayAbility
  * Adds more functionality and customization options in the context of activation, failure, etc.
  */
-UCLASS(Blueprintable, HideCategories = Input, PrioritizeCategories=(Activation, Display))
+UCLASS(Blueprintable, PrioritizeCategories=(Activation, Display))
 class MODULARGAMEPLAYABILITIES_API UModularGameplayAbility
 	: public UGameplayAbility
 	, public IGameplayTagAssetInterface
@@ -274,11 +274,13 @@ protected:
 	/** Called when this ability's input is pressed. */
 	UFUNCTION(BlueprintImplementableEvent, Category = Ability, DisplayName = OnAbilityInputPressed)
 	void K2_OnAbilityInputPressed(float TimeWaited);
+	virtual void OnAbilityInputPressed(float TimeWaited) {}
 	bool bHasBlueprintInputPressed;	// If not implemented, no need to listen or send replicated input events.
 
 	/** Called when this ability's input is released. */
 	UFUNCTION(BlueprintImplementableEvent, Category = Ability, DisplayName = OnAbilityInputReleased)
 	void K2_OnAbilityInputReleased(float TimeHeld);
+	virtual void OnAbilityInputReleased(float TimeHeld) {}
 	bool bHasBlueprintInputReleased; // If not implemented, no need to listen or send replicated input events.
 
 	/** Called while the matching input event is ongoing */

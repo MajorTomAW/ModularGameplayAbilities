@@ -1,35 +1,35 @@
-# Modular Gameplay Abilities  
+# Modular Gameplay Abilities
 
-## <a id="head"></a> 📋 〢 Overview  
+## <a id="head"></a> 📋 〢 Overview
 
-Unreal Engine Plugin for extending the GAS in a Lyra-like manner.  
+Unreal Engine Plugin for extending the GAS in a Lyra-like manner.
 
 > [!WARNING]
 > This is still in development and some features may not work as expected.
 
 ---
 
-## 🌐 〢 Index
-> 1. [Modular Gameplay Ability](#modular-gameplay-ability)  
-> &nbsp; 1.1 [Activation](#mga-activation)  
-> &nbsp; 1.2 [Actor Tracking](#mga-actor-tracking)    
-> &nbsp; 1.3 [Failure Management](#mga-failure-management)  
-> &nbsp; 1.4 [(Explicit) Cooldowns](#mga-cooldowns)  
-> &nbsp; 1.5 [AI-Controlled Ability usage](#mga-ai-controlled)    
-> 2. [Lazy-Loading the ASC](#asc-lazyloading)  
-> 3. [Installing the plugin](#installing)  
+## Index
+> 1. [Modular Gameplay Ability](#modular-gameplay-ability)
+> &nbsp; 1.1 [Activation](#mga-activation)
+> &nbsp; 1.2 [Actor Tracking](#mga-actor-tracking)
+> &nbsp; 1.3 [Failure Management](#mga-failure-management)
+> &nbsp; 1.4 [(Explicit) Cooldowns](#mga-cooldowns)
+> &nbsp; 1.5 [AI-Controlled Ability usage](#mga-ai-controlled)
+> 2. [Lazy-Loading the ASC](#asc-lazyloading)
+> 3. [Installing the plugin](#installing)
 
 ---
 
 
-<a name="modular-gameplay-ability"></a>  
-## 1. Modular Gameplay Ability
-The _[UModularGameplayAbilty](Source/ModularGameplayAbilities/Public/Abilities/ModularGameplayAbility.h)_ is an extended version of the base ``UGameplayAbility`` providing more functionality and customization options in the context of activation, failure, cooldowns, etc.  
+<a name="modular-gameplay-ability"></a>
+## Modular Gameplay Ability
+The _[UModularGameplayAbilty](Source/ModularGameplayAbilities/Public/Abilities/ModularGameplayAbility.h)_ is an extended version of the base ``UGameplayAbility`` providing more functionality and customization options in the context of activation, failure, cooldowns, etc.
 
 ---
 
-<a name="mga-activation"></a>  
-### 📣 〢 Activation
+<a name="mga-activation"></a>
+### Activation
 Gameplay Ability activation can happen in 3 different ways:
 
 | Activation Policy | Description |
@@ -37,9 +37,14 @@ Gameplay Ability activation can happen in 3 different ways:
 | 1. Passive  |  Used for abilities that always apply gameplay effects and/or tags when being given to an ASC. (e.g. "On Spawn") |
 | 2. Triggered | Abilities that should be activated by a trigger (for example a GameplayEvent / Gameplay Message / etc.) |
 | 3. Active | Abilities that should explicitly be activated by player actions. (E.g. pressing an input key) |
-  
-This will run through the default ability activation process but also checking for its Activation Group.  
-The principle of Activation Groups is pretty much ported from Lyra.  
+
+> [!NOTE]
+> Triggered or Passive abilities won't receive Input events, unless ``ForceReceiveInput`` is turned on.
+
+![image](https://github.com/user-attachments/assets/f7fafb5b-391c-48c4-a790-bc81c6752c6c)
+
+This will run through the default ability activation process but also checking for its Activation Group.
+The principle of Activation Groups is pretty much ported from Lyra.
 
 On a high level, each ability can have its own activation group the defines its relationship to other abilities.
 
@@ -55,10 +60,10 @@ Potential usage of this could be:
 - **Exclusive (Replaceable)**: Abilities that can be replaced by others, e.g. ``Aim Down Sights``, ``Sprint``, ``Crouch``.
 - **Exclusive (Blocking)**: Abilities that should block others, e.g. ``Show Inventory``, ``Show Map``. (Only one at a time should be shown)
 
-![image](https://github.com/user-attachments/assets/9dc85a1f-5803-4ff2-848c-0a28b6d88ae6)
+![image](https://github.com/user-attachments/assets/5812b4f2-693c-498b-b085-638b29e515ce)
 
 
----
+<!---
 
 <a name="mga-actor-tracking"></a>
 ### 📣 〢 Actor Tracking
@@ -66,23 +71,33 @@ Potential usage of this could be:
 
 ---
 
-<a name="mga-failure-management"></a>    
+<a name="mga-failure-management"></a>
 ### 📣 〢 Failure Management
 [...]
 
+--->
+
+<a name="mga-cooldowns"></a>
+### (Explicit) Cooldowns
+
+The ``ExplicitCooldownDuration`` property can be used to specifiy per-ability cooldowns.
+This will be injected into the provied Cooldown Gameplay Effect class, together with the Explicit Cooldown tags and Asset Tags.
+
+Therefore, allowing you to share the same Cooldown Gameplay Effect with multiple Abilities.
+
+> [!WARN]
+> Since CheckCooldown() checks for cooldown tags (applied from the Cooldown Gameplay Effect), you must have unique Explicit Cooldown tags PER ability.
+> Otherwise the cooldown might function as a global cooldown, blocking all abilities, or cause unexpected behavior.
+>
+> (The UModularGameplayAbility override the GetCooldownTags(), appending the Explicit Cooldown tags.)
+
+![image](https://github.com/user-attachments/assets/d9afa9a5-6aaa-4f92-8366-8968460b44de)
+
 ---
 
-<a name="mga-cooldowns"></a>  
-### 📣 〢 (Explicit) Cooldowns
-[...]
-
-![image](https://github.com/user-attachments/assets/f046a9c6-a541-44b7-97d3-d07281b9c848)
-
----
-
-<a name="mga-ai-controlled"></a>  
+<a name="mga-ai-controlled"></a>
 ### 📣 〢 AI-Controlled Ability usage
-As Gameplay Abilities are also able to be activated by bot-controlled pawns, the ModularGameplayAbility provides further logic modifying the AI's behavior.  
+As Gameplay Abilities are also able to be activated by bot-controlled pawns, the ModularGameplayAbility provides further logic modifying the AI's behavior.
 E.g. during the Ability activation, if instigated by an AI, it will stop any Behavior Logic / AI Movement / RVO Avoidance / ...
 [...]
 
@@ -90,13 +105,13 @@ E.g. during the Ability activation, if instigated by an AI, it will stop any Beh
 
 ---
 
-<a name="asc-lazyloading"></a>  
+<a name="asc-lazyloading"></a>
 ## 2. Lazy-Loading the ASC
 The _[AModularAbilityActor](Source/ModularGameplayAbilities/Public/ModularAbilityActor.h)_ provides logic for an actor that is meant to use the Ability System.
 Thus setting up an example of how to lazy-load the Ability System and manage pending attribute modifiers for optimal performance.
 [...]
 
-![image](https://github.com/user-attachments/assets/2557c7a8-4154-44ea-816b-87c760f965f5)  
+![image](https://github.com/user-attachments/assets/2557c7a8-4154-44ea-816b-87c760f965f5)
 
 [Credit (Vorixo)](https://vorixo.github.io/devtricks/lazy-loading-asc/)
 

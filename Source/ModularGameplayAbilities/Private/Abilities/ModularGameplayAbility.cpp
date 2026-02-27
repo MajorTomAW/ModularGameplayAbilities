@@ -640,8 +640,7 @@ void UModularGameplayAbility::ActivateAbility(const FGameplayAbilitySpecHandle H
 {
 	UAbilitySystemComponent* AbilitySystem = ActorInfo->AbilitySystemComponent.Get();
 	if (ensure(AbilitySystem) &&
-		ShouldReceiveInputEvents() &&
-		(bHasBlueprintInputPressed || bHasBlueprintInputReleased))
+		ShouldReceiveInputEvents())
 	{
 		// Cache the starting time of this ability's activation
 		LastInputCallbackTime = GetWorld()->GetTimeSeconds();
@@ -743,13 +742,23 @@ void UModularGameplayAbility::OnInputChangedCallback(bool bIsPressed)
 	}
 
 	// We're done now. Inform the blueprint about the input event
-	if (bIsPressed && bHasBlueprintInputPressed)
+	if (bIsPressed)
 	{
-		K2_OnAbilityInputPressed(ElapsedTime);
+		OnAbilityInputPressed(ElapsedTime);
+
+		if (bHasBlueprintInputPressed)
+		{
+			K2_OnAbilityInputPressed(ElapsedTime);
+		}
 	}
-	else if (bHasBlueprintInputReleased)
+	else
 	{
-		K2_OnAbilityInputReleased(ElapsedTime);
+		OnAbilityInputReleased(ElapsedTime);
+
+		if (bHasBlueprintInputReleased)
+		{
+			K2_OnAbilityInputReleased(ElapsedTime);
+		}
 	}
 }
 

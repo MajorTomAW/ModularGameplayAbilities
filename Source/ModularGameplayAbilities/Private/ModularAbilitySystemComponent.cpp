@@ -835,7 +835,7 @@ void UModularAbilitySystemComponent::ProcessAbilityInput(float DeltaTime, bool b
 	{
 		if (const FGameplayAbilitySpec* Spec = FindAbilitySpecFromHandle(Handle))
 		{
-			if (!Spec->Ability)
+			if (!Spec->Ability | Spec->IsActive())
 			{
 				continue;
 			}
@@ -882,6 +882,19 @@ void UModularAbilitySystemComponent::ProcessAbilityInput(float DeltaTime, bool b
 	for (const auto& Handle : HandlesToActivate)
 	{
 		bool bDidActivate = TryActivateAbility(Handle);
+
+		// if activate succeeded, and spec input pressed,
+		// we also need to call AbilitySpecInputPressed again, as it wasnt above
+		if (bDidActivate)
+		{
+			FGameplayAbilitySpec* Spec = FindAbilitySpecFromHandle(Handle);
+			check(Spec)
+
+			if (Spec->InputPressed)
+			{
+				AbilitySpecInputPressed(*Spec);
+			}
+		}
 
 		ABILITY_LOG(VeryVerbose, TEXT("TryActivateAbility %s: %s"), *Handle.ToString(), bDidActivate ? TEXT("Success") : TEXT("Failed"));
 	}
