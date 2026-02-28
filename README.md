@@ -27,7 +27,7 @@ Therefore, my aim was to provide a base GAS setup, that can be used for (almost)
 > 3. [Modular Ability Set](#modular-ability-set)<br>
 > 4. [Modular Attribute Set](#modular-attribute-set)<br>
 > 5. [Ability Tasks](#ability-tasks)
-> 100. [Installing the plugin](#installing)
+> 100. [Editor Integration](#editor-integration)
 
 <!-- &nbsp; 1.2 [Actor Tracking](#mga-actor-tracking)<br>
 > &nbsp; 1.3 [Failure Management](#mga-failure-management)<br>-->
@@ -554,7 +554,7 @@ Runs local only !
 
 ---
 
-<a name="editor-integration">
+<a name="editor-integration"></a>
 ## Editor Integration
 
 The plugin also provides custom asset factories to quickly create new Ability System assets.
@@ -562,6 +562,7 @@ The plugin also provides custom asset factories to quickly create new Ability Sy
 
 Common Gameplay Effect and Ability classes can be added in the project settings <br>
 ``ProjectSettings -> Editor -> Gameplay Ability Factory / Gameplay Effect Factory``
+
 ![image](https://github.com/user-attachments/assets/22eea8c2-283a-44b8-af9f-b550b61c3fc1)
 ![image](https://github.com/user-attachments/assets/94c7a172-9608-40cb-b05c-650e9b17097d)
 
