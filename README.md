@@ -169,7 +169,7 @@ These are a few utility functions I also added to the ability class. Though, I f
 ## Modular Ability System Component
 The _[UModularAbilitySystemComponent](Source/ModularGameplayAbilities/Public/ModularAbilitySystemComponent.h)_ is pretty much the same as in Lyra.<br>
 Featuring a way to activate abilities based on gameplay tags or input id.<br>
-Read more about activating abilities via input [here](#ability-set)
+Read more about activating abilities via input [here](#modular-ability-set)
 
 
 ---
