@@ -10,15 +10,15 @@ UCLASS(Config=Engine, DefaultConfig, MinimalAPI)
 class UModularGameplayAbilitiesSettings : public UObject
 {
 	GENERATED_BODY()
-	
+
 public:
 	UFUNCTION()
-	static MODULARGAMEPLAYABILITIES_API bool IsUsingExperimentalInput() { return GetDefault<ThisClass>()->bEnableExperimentalAbilityInput; }
+	static MODULARGAMEPLAYABILITIES_API bool IsUsingAlterAbilityInput() { return GetDefault<ThisClass>()->bEnableAlterAbilityInput; }
 
 	UFUNCTION()
-	static MODULARGAMEPLAYABILITIES_API bool IsNotUsingExperimentalInput() { return !GetDefault<ThisClass>()->bEnableExperimentalAbilityInput; }
+	static MODULARGAMEPLAYABILITIES_API bool IsNotUsingAlterAbilityInput() { return !GetDefault<ThisClass>()->bEnableAlterAbilityInput; }
 
 protected:
 	UPROPERTY(Config, EditAnywhere, Category = Experimental, meta=(ConfigRestartRequired=true))
-	bool bEnableExperimentalAbilityInput = false;
+	bool bEnableAlterAbilityInput = false;
 };

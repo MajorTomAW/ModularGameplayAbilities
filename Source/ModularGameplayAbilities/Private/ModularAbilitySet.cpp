@@ -168,7 +168,7 @@ void UModularAbilitySet::GiveToAbilitySystem(
 	}
 
 	// Grant the abilities
-	if (UModularGameplayAbilitiesSettings::IsUsingExperimentalInput())
+	if (UModularGameplayAbilitiesSettings::IsUsingAlterAbilityInput())
 	{
 		for (int32 Idx = 0; Idx < GameplayAbilities.Num(); ++Idx)
 		{
@@ -293,7 +293,7 @@ EDataValidationResult UModularAbilitySet::IsDataValid(class FDataValidationConte
 	EDataValidationResult Result = Super::IsDataValid(Context);
 
 	// Validate the abilities
-	if (UModularGameplayAbilitiesSettings::IsUsingExperimentalInput())
+	if (UModularGameplayAbilitiesSettings::IsUsingAlterAbilityInput())
 	{
 		for (const auto& Ability : GameplayAbilities.Array())
 		{

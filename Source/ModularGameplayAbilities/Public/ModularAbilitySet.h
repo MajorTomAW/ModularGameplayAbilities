@@ -162,11 +162,11 @@ public:
 
 protected:
 	/** Abilities to grant when this set is given. */
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = AbilitySystem, meta = (TitleProperty=AbilityClass, EditConditionHides, EditCondition="ModularGameplayAbilitiesSettings.IsNotUsingExperimentalInput"))
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = AbilitySystem, meta = (TitleProperty=AbilityClass, EditConditionHides, EditCondition="ModularGameplayAbilitiesSettings.IsNotUsingAlterAbilityInput"))
 	TArray<FModularAbilitySet_GameplayAbility> Abilities;
 
 	/** Abilities to grant when this set is given. */
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = AbilitySystem, meta=(EditConditionHides, EditCondition="ModularGameplayAbilitiesSettings.IsUsingExperimentalInput"), NoClear)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = AbilitySystem, meta=(EditConditionHides, EditCondition="ModularGameplayAbilitiesSettings.IsUsingAlterAbilityInput"), NoClear)
 	TSet<TSoftClassPtr<UGameplayAbility>> GameplayAbilities;
 
 	/** Effects to grant when this set is given. */

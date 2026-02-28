@@ -554,6 +554,19 @@ Runs local only !
 
 ---
 
+<a name="editor-integration">
+## Editor Integration
+
+The plugin also provides custom asset factories to quickly create new Ability System assets.
+![image](https://github.com/user-attachments/assets/9d937f41-5572-4b3f-b4fa-f308a3695842)
+
+Common Gameplay Effect and Ability classes can be added in the project settings <br>
+``ProjectSettings -> Editor -> Gameplay Ability Factory / Gameplay Effect Factory``
+![image](https://github.com/user-attachments/assets/22eea8c2-283a-44b8-af9f-b550b61c3fc1)
+![image](https://github.com/user-attachments/assets/94c7a172-9608-40cb-b05c-650e9b17097d)
+
+---
+
 <p align="center">
 If you like this project, leaving a star is much appreciated<br>
 <a href="#head">

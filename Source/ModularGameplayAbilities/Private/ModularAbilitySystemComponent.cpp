@@ -681,7 +681,7 @@ void UModularAbilitySystemComponent::CancelInputActivatedAbilities(bool bReplica
 
 void UModularAbilitySystemComponent::AbilityInputTagPressed(const FGameplayTag& InputTag)
 {
-	if (UModularGameplayAbilitiesSettings::IsUsingExperimentalInput())
+	if (UModularGameplayAbilitiesSettings::IsUsingAlterAbilityInput())
 	{
 		checkf(false, TEXT("UModularGameplayAbilitiesSettings::IsUsingExperimentalInput() is enabled. Please use the new input system instead of the old one."));
 	}
@@ -726,7 +726,7 @@ void UModularAbilitySystemComponent::AbilityInputTagPressed(const FGameplayTag& 
 
 void UModularAbilitySystemComponent::AbilityInputTagReleased(const FGameplayTag& InputTag)
 {
-	if (UModularGameplayAbilitiesSettings::IsUsingExperimentalInput())
+	if (UModularGameplayAbilitiesSettings::IsUsingAlterAbilityInput())
 	{
 		checkf(false, TEXT("UModularGameplayAbilitiesSettings::IsUsingExperimentalInput() is enabled. Please use the new input system instead of the old one."));
 	}
@@ -752,7 +752,7 @@ void UModularAbilitySystemComponent::AbilityInputTagReleased(const FGameplayTag&
 
 void UModularAbilitySystemComponent::AbilityInputIdPressed(int32 InputId)
 {
-	if (UModularGameplayAbilitiesSettings::IsNotUsingExperimentalInput())
+	if (UModularGameplayAbilitiesSettings::IsNotUsingAlterAbilityInput())
 	{
 		checkf(false, TEXT("UModularGameplayAbilitiesSettings::IsUsingExperimentalInput() is disabled. Please use the old input system instead of the new one."));
 	}
@@ -793,7 +793,7 @@ void UModularAbilitySystemComponent::AbilityInputIdPressed(int32 InputId)
 
 void UModularAbilitySystemComponent::AbilityInputIdReleased(int32 InputId)
 {
-	if (UModularGameplayAbilitiesSettings::IsNotUsingExperimentalInput())
+	if (UModularGameplayAbilitiesSettings::IsNotUsingAlterAbilityInput())
 	{
 		checkf(false, TEXT("UModularGameplayAbilitiesSettings::IsUsingExperimentalInput() is disabled. Please use the old input system instead of the new one."));
 	}

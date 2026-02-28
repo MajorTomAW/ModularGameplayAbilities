@@ -171,7 +171,7 @@ bool UGameplayEffectFactory::ConfigureProperties()
 	Filter->DisallowedChildrenOfClasses.Add(UBlueprintMapLibrary::StaticClass());
 	Options.ClassFilters.Add(Filter.ToSharedRef());
 
-	const FText TitleText = LOCTEXT("PickParentClass", "Pick Parent Class for New Gameplay Ability");
+	const FText TitleText = LOCTEXT("PickParentClass", "Pick Parent Class for New Gameplay Effect");
 	UClass* ChosenClass = nullptr;
 	const bool bPressedOk = SClassPickerDialog::PickClass(TitleText, Options, ChosenClass, UGameplayEffect::StaticClass());
 
