@@ -24,7 +24,7 @@ Therefore, my aim was to provide a base GAS setup, that can be used for (almost)
 > &nbsp; 1.5 [Utilies](#mga-utilies)<br>
 > 2. [Modular Ability System Component](#modular-asc)<br>
 > &nbsp; 2.1 [Lazy-Loading the ASC](#asc-lazyloading)<br>
-> 3. [Ability Set](#modular-ability-set)<br>
+> 3. [Modular Ability Set](#modular-ability-set)<br>
 > 4. [Modular Attribute Set](#modular-attribute-set)<br>
 > 5. [Ability Tasks](#ability-tasks)
 > 100. [Installing the plugin](#installing)
@@ -234,13 +234,14 @@ A list of attribute set classes to be spawned on the target.
 
 ### Using Input ID's instead
 In my game, I use a custom input id enum instead of Gameplay Tags.<br>
-Some people might disagree with me, to use Gameplay Tags because of its _modulariy_ instead, but I'd rather not have the cost of replicating unnecessary gamplay tags (even though with fast replication it only replicated indices instead of the whole tag) and use the existing Input ID's that GAS comes with.
+Some people might disagree with me and say to use Gameplay Tags because of its _modulariy_ instead, but I'd rather not have the cost of replicating unnecessary gamplay tags (even though with fast replication it only replicated indices instead of the whole tag) and use the existing Input ID's that GAS comes with.
 
 ![image](https://github.com/user-attachments/assets/82f6d05b-daa9-417a-8fc9-0a682920d1a7)
 
-To actually use Input ID's you need to do several thins.
+To actually use Input ID's you need to do several things.
 1. In the ``Modular Gameplay Abilties Settings`` you need to enable ``bEnableAlterAbilityInput``.
-2. Create a new struct, that derives from ``FAbilityActivatedByInputData`` which contains your custom ability input enum. And override ``GetInputKey`` to return it's value.<br>
+2. Create a new struct, that derives from ``FAbilityActivatedByInputData`` which contains your custom ability input enum.<br>
+And override ``GetInputKey`` to return it's value.<br>
 e.g.,
 ```cpp
 USTRUCT(BlueprintType, meta=(DisplayName="Ability Input Data"))
@@ -428,6 +429,79 @@ void UBotaniAbilitySet::GiveToAbilitySystem(
 ---
 
 <a name="modular-attribute-set"></a>
+## Modular Attribute Set
+The _[UModularAttributeSet](Source/ModularGameplayAbilities/Public/Attributes/ModularAttributeSet.h)_ comes with a few helper macros to create additional properties and delegates among with your attributes.
+
+| Macro | Description |
+|--------------|-------------------|
+| ATTRIBUTE_ACCESSORS_NOTIFY | Same as ATTRIBUTE_ACCESSORS, but will also create a generic On##AttributeName##Changed delegate. |
+| ATTRIBUTE_ACCESSORS_NOTIFY_DEPLETED | Same as ATTRIBUTE_ACCESSORS_NOTIFY,but will also create a generic OnOutOf##AttributeName## delegate |
+
+They're useful for things like Health or Shield if you have a Health Component that should listen to attribute changes.
+
+E.g.,
+```cpp
+...
+
+/** Attribute accessors */
+ATTRIBUTE_ACCESSORS_NOTIFY_DEPLETED(ThisClass, Health)
+ATTRIBUTE_ACCESSORS_NOTIFY_DEPLETED(ThisClass, Shield)
+
+ATTRIBUTE_ACCESSORS_NOTIFY(ThisClass, MaxHealth)
+ATTRIBUTE_ACCESSORS_NOTIFY(ThisClass, MaxShield)
+
+...
+```
+
+For the ``Health`` attribute, it would generate the following
+```cpp
+// The things from ATTRIBUTE_ACCESSORS
+...
+
+mutable FGameplayAttributeEvent OnHealthChanged;
+float CachedHealthBeforeAttributeChange;
+mutable FGameplayAttributeEvent OnOutOfHealth;
+bool bOutOfHealth;
+```
+
+Which a Health Component could use like this:
+```cpp
+UMyHealthComponent::InitializeWithAbilitySystem()
+{
+...
+	// Register to listen for attribute changes
+	HealthSet->OnHealthChanged.AddUObject(this, &ThisClass::HandleHealthChanged);
+	HealthSet->OnShieldChanged.AddUObject(this, &ThisClass::HandleShieldChanged);
+	HealthSet->OnMaxHealthChanged.AddUObject(this, &ThisClass::HandleMaxHealthChanged);
+	HealthSet->OnMaxShieldChanged.AddUObject(this, &ThisClass::HandleMaxShieldChanged);
+	HealthSet->OnOutOfHealth.AddUObject(this, &ThisClass::HandleOutOfHealth);
+	HealthSet->OnOutOfShield.AddUObject(this, &ThisClass::HandleOutOfShield);
+
+```
+
+> [!NOTE]
+> You still need to call the delegates yourself.
+
+E.g.,
+```cpp
+void UBotaniHealthSet::OnRep_Health(const FBotaniGameplayAttributeData& OldValue)
+{
+	LAZY_ATTRIBUTE_REPNOTIFY(ThisClass, Health, OldValue)
+
+	// Call the change callback, which is not meant to change attributes on the client
+	const float CurrentHealth = GetHealth();
+	const float EstimatedMagnitude = CurrentHealth - OldValue.GetCurrentValue();
+
+	OnHealthChanged.Broadcast(nullptr, nullptr, nullptr, EstimatedMagnitude, OldValue.GetCurrentValue(), CurrentHealth);
+
+	if (bOutOfHealth && CurrentHealth <= 0.0f)
+	{
+		OnOutOfHealth.Broadcast(nullptr, nullptr, nullptr, EstimatedMagnitude, OldValue.GetCurrentValue(), CurrentHealth);
+	}
+
+	bOutOfHealth = CurrentHealth <= 0.0f;
+}
+```
 
 ---
 
