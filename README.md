@@ -234,7 +234,7 @@ A list of attribute set classes to be spawned on the target.
 
 ### Using Input ID's instead
 In my game, I use a custom input id enum instead of Gameplay Tags.<br>
-Some people might disagree with me and say to use Gameplay Tags because of its _modulariy_ instead, but I'd rather not have the cost of replicating unnecessary gamplay tags (even though with fast replication it only replicated indices instead of the whole tag) and use the existing Input ID's that GAS comes with.
+Some people might disagree with me and say to use Gameplay Tags because of its _modularity_ instead, but I'd rather not have the cost of replicating unnecessary gamplay tags (even though with fast replication it only replicated indices instead of the whole tag) and use the existing Input ID's that GAS comes with.
 
 ![image](https://github.com/user-attachments/assets/82f6d05b-daa9-417a-8fc9-0a682920d1a7)
 
@@ -426,6 +426,44 @@ void UBotaniAbilitySet::GiveToAbilitySystem(
 ```
 </details>
 
+### Connecting Input with Abilities
+Inside your player controller (or whereever else your input lies), you should have a generic ``AbilityInputPressed/Released`` method that either takes in an Input ID or a GameplayTag.
+
+E.g.,
+```cpp
+void UBotaniAbilityHeroComponent::Input_AbilityInputPressed(EBotaniAbilityInputBinds::Type InputKey)
+{
+	if (UModularAbilitySystemComponent* AbilitySystem = GetMyAbilitySystemComponent())
+	{
+		AbilitySystem->AbilityInputIdPressed(InputKey);
+	}
+}
+
+void UBotaniAbilityHeroComponent::Input_AbilityInputReleased(EBotaniAbilityInputBinds::Type InputKey)
+{
+	if (UModularAbilitySystemComponent* AbilitySystem = GetMyAbilitySystemComponent())
+	{
+		AbilitySystem->AbilityInputIdReleased(InputKey);
+	}
+}
+```
+For GameplayTags, call the ``AbilityInputTagPressed/Released(Tag);`` version instead.
+
+You still need to override the ``PostProcessInput`` method in the ``APlayerController`` to make the Ability System Component process the ability inputs.
+
+E.g.,
+```cpp
+void ABotaniPlayerController::PostProcessInput(const float DeltaTime, const bool bGamePaused)
+{
+	if (UModularAbilitySystemComponent* ASC = GetMyAbilitySystemComponent())
+	{
+		ASC->ProcessAbilityInput(DeltaTime, bGamePaused);
+	}
+
+	Super::PostProcessInput(DeltaTime, bGamePaused);
+}
+```
+
 ---
 
 <a name="modular-attribute-set"></a>
@@ -506,7 +544,13 @@ void UBotaniHealthSet::OnRep_Health(const FBotaniGameplayAttributeData& OldValue
 ---
 
 <a name="ability-tasks"></a>
-#
+## Ability Tasks
+
+#### Wait For Enhanced Input
+![image](https://github.com/user-attachments/assets/283b1788-8423-4e0e-a129-1e90e2562f8d)
+
+Listens to the specified Input Action and triggers the corresponding callbacks.<br>
+Runs local only !
 
 ---
 
