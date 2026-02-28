@@ -9,6 +9,9 @@ Therefore, my aim was to provide a base GAS setup, that can be used for (almost)
 (I don't really like the name "Modular Gameplay Abilities" anymore lol, I was feeling a bit too fancy when I chose that name.)
 
 
+If you discover any issues or have questions, feel free to reach out to me 🙂<br>
+My discord: ``majort``
+
 
 > [!WARNING]
 > This is still in development and some features may not work as expected.
